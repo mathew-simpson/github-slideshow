@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./node_modules/**)",
+      "Read(./_site/**)",
+      "Grep(./node_modules/**)",
+      "Grep(./_site/**)",
+      "Glob(./node_modules/**)",
+      "Glob(./_site/**)"
+    ]
+  }
+}
