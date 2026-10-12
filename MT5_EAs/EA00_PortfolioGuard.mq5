@@ -1,11 +1,13 @@
 //+------------------------------------------------------------------+
 //| EA00 - Portfolio Guard                                          |
 //| Runs on one chart next to the strategy EAs. Does not open trades.|
-//|  - keeps peak / start-of-day equity current between ticks        |
+//|  - keeps peak / start-of-day trading equity current between ticks|
+//|    (deposits and withdrawals are not trading results)           |
 //|  - at the hard-stop drawdown closes every managed position and   |
 //|    halts new entries until Guard_ResetHalt is set                |
 //|  - shows the portfolio dashboard and logs equity snapshots to    |
 //|    Terminal\Common\Files\portfolio_equity_log.csv                |
+//| Put one guard on each account's terminal. Its state is per login.|
 //+------------------------------------------------------------------+
 #property copyright "MT5 Trading System"
 #property version   "1.00"
@@ -16,9 +18,15 @@ input group "=== Portfolio Guard ==="
 input double Guard_HardStopDDPct = 20.0;  // Close managed positions and halt at this drawdown from peak
 input long   Guard_MagicFrom     = 10001; // Managed magic numbers, from
 input long   Guard_MagicTo       = 10099; // Managed magic numbers, to
-input bool   Guard_ResetHalt     = false; // Clear a halt and restart the peak from current equity
+input bool   Guard_ResetHalt     = false; // Clear a halt and restart the peak from current trading equity
 input int    Guard_LogMinutes    = 60;    // Minutes between equity log rows (0 = off)
 input string Guard_LogFile       = "portfolio_equity_log.csv";
+
+void Guard();
+void Dashboard();
+void LogSnapshot();
+int  CloseManaged();
+bool IsManaged(long magic);
 
 CTrade   trade;
 datetime lastLog = 0;
@@ -27,9 +35,10 @@ int OnInit()
 {
    if(Guard_ResetHalt)
    {
-      GlobalVariableSet(PF_GV_HALT, 0);
-      GlobalVariableSet(PF_GV_PEAK, AccountInfoDouble(ACCOUNT_EQUITY));
-      Print("Portfolio Guard: halt cleared, peak equity reset to ", DoubleToString(AccountInfoDouble(ACCOUNT_EQUITY), 2),
+      PF_SyncFlows(true);
+      GlobalVariableSet(PF_Key(PF_GV_HALT), 0);
+      GlobalVariableSet(PF_Key(PF_GV_PEAK), PF_AdjEquity());
+      Print("Portfolio Guard: halt cleared, peak trading equity reset to ", DoubleToString(PF_AdjEquity(), 2),
             ". Set Guard_ResetHalt back to false.");
    }
    EventSetTimer(5);
@@ -62,11 +71,14 @@ int CloseManaged()
 
 void Guard()
 {
-   PF_Update();
+   PF_Update(true);
+   // No sample from the broker: never start a halt on a zero equity read. A real loss that
+   // takes trading equity to zero or below still halts, because the drawdown then exceeds the limit.
+   if(AccountInfoDouble(ACCOUNT_EQUITY) <= 0) return;
    double dd = PF_DrawdownPct();
    if(!PF_Halted() && dd >= Guard_HardStopDDPct)
    {
-      GlobalVariableSet(PF_GV_HALT, 1);
+      GlobalVariableSet(PF_Key(PF_GV_HALT), 1);
       Print("Portfolio Guard: drawdown ", DoubleToString(dd, 2), "% hit the ", DoubleToString(Guard_HardStopDDPct, 1),
             "% hard stop. Closing managed positions; new entries halted until Guard_ResetHalt.");
    }
@@ -79,11 +91,12 @@ void Guard()
 void Dashboard()
 {
    double eq     = AccountInfoDouble(ACCOUNT_EQUITY);
-   double peak   = GlobalVariableCheck(PF_GV_PEAK) ? GlobalVariableGet(PF_GV_PEAK) : eq;
+   string kp     = PF_Key(PF_GV_PEAK);
+   double peak   = GlobalVariableCheck(kp) ? GlobalVariableGet(kp) : PF_AdjEquity();
    double margin = AccountInfoDouble(ACCOUNT_MARGIN);
    string why    = PF_HaltReason();
    string s = "Portfolio Guard\n";
-   s += StringFormat("Equity %.2f   Peak %.2f   Drawdown %.2f%%   Today %.2f%%\n", eq, peak, PF_DrawdownPct(), -PF_DayLossPct());
+   s += StringFormat("Equity %.2f   Peak (trading) %.2f   Drawdown %.2f%%   Today %.2f%%\n", eq, peak, PF_DrawdownPct(), -PF_DayLossPct());
    s += StringFormat("Open risk %.2f%% of %.1f%% budget   Margin %.1f%%   Positions %d/%d\n",
                      eq > 0 ? PF_OpenRisk() / eq * 100 : 0, PF_MaxOpenRiskPct, eq > 0 ? margin / eq * 100 : 0,
                      PositionsTotal(), PF_MaxPositions);
@@ -103,12 +116,14 @@ void LogSnapshot()
    if(h == INVALID_HANDLE) return;
    lastLog = TimeCurrent();
    if(FileSize(h) == 0)
-      FileWrite(h, "time", "balance", "equity", "peak", "dd_pct", "open_risk_pct", "margin_pct", "positions", "blocked");
+      FileWrite(h, "time", "login", "balance", "equity", "net_flow", "peak", "dd_pct", "open_risk_pct", "margin_pct", "positions", "blocked");
    FileSeek(h, 0, SEEK_END);
    double eq = AccountInfoDouble(ACCOUNT_EQUITY);
    FileWrite(h, TimeToString(TimeCurrent(), TIME_DATE | TIME_MINUTES),
+             IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN)),
              DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE), 2), DoubleToString(eq, 2),
-             DoubleToString(GlobalVariableGet(PF_GV_PEAK), 2), DoubleToString(PF_DrawdownPct(), 2),
+             DoubleToString(PF_NetFlow(), 2),
+             DoubleToString(GlobalVariableGet(PF_Key(PF_GV_PEAK)), 2), DoubleToString(PF_DrawdownPct(), 2),
              DoubleToString(eq > 0 ? PF_OpenRisk() / eq * 100 : 0, 2),
              DoubleToString(eq > 0 ? AccountInfoDouble(ACCOUNT_MARGIN) / eq * 100 : 0, 2),
              PositionsTotal(), PF_HaltReason());

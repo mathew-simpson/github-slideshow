@@ -177,7 +177,8 @@ void OnTick()
       {
          double sl = bid - atr * ATR_SL_Mult;
          double tp = bid + atr * ATR_TP_Mult;
-         double lots = PF_CapLots(ORDER_TYPE_BUY, ask, sl, gridLots, 10011);
+         // Grid adds apply the current drawdown throttle; PF_CapLots applies the allocation gate and caps
+         double lots = PF_CapLots(ORDER_TYPE_BUY, ask, sl, gridLots * PF_ThrottleFactor(), 10011);
          if(lots > 0 && trade.Buy(lots, _Symbol, ask, sl, tp, "EA11 Grid Level " + IntegerToString(gridLevel + 1)))
          {
             gridLevel++;
@@ -188,7 +189,8 @@ void OnTick()
       {
          double sl = ask + atr * ATR_SL_Mult;
          double tp = ask - atr * ATR_TP_Mult;
-         double lots = PF_CapLots(ORDER_TYPE_SELL, bid, sl, gridLots, 10011);
+         // Grid adds apply the current drawdown throttle; PF_CapLots applies the allocation gate and caps
+         double lots = PF_CapLots(ORDER_TYPE_SELL, bid, sl, gridLots * PF_ThrottleFactor(), 10011);
          if(lots > 0 && trade.Sell(lots, _Symbol, bid, sl, tp, "EA11 Grid Level " + IntegerToString(gridLevel + 1)))
          {
             gridLevel++;

@@ -42,7 +42,7 @@ int MM_CountTrades(ulong magic)
    return count;
 }
 
-//--- Hour of day (MQL5 has no TimeHour)
+//--- Hour of day for a datetime, read through one helper by the session filters
 int MM_Hour(datetime t)
 {
    MqlDateTime st;
