@@ -70,6 +70,7 @@ bool IsTradingSession()
 bool DailyLossExceeded()
 {
    double balance  = StopMetric();
+   if(balance <= 0) return false;   // A zero or negative read is not a measured loss
    double drawdown = (dayStartBalance - balance) / dayStartBalance * 100.0;
    return (drawdown >= MaxDailyLoss);
 }
@@ -78,6 +79,7 @@ bool MaxDrawdownExceeded()
 {
    if(!gridActive) return false;
    double balance  = StopMetric();
+   if(balance <= 0) return false;   // A zero or negative read is not a measured loss
    double drawdown = (gridStartBalance - balance) / gridStartBalance * 100.0;
    return (drawdown >= MaxDrawdownPct);
 }
