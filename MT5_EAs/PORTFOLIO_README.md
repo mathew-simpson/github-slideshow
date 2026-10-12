@@ -121,3 +121,5 @@ Do not go live on any account until each of these is decided and recorded:
    RiskPercent (see Small accounts above).
 4. **Margin cap at low leverage.** The 30% cap blocks 0.01 EURUSD at 1:30. Choose the leverage or the cap.
 5. **PF_Enabled.** Keep it true for live. Setting it false removes the halt and the caps.
+6. **Flow accounting.** A deposit or withdrawal can move the peak and cause a false halt. The fix is
+   designed but not built. See `FLOW_ACCOUNTING_DESIGN.md`. Blocker until it is built and passes the demo test plan.
