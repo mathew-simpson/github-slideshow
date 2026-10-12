@@ -111,7 +111,12 @@ void OnTick()
    PF_Update();
    static datetime lastDay = 0;
    datetime today = (datetime)(TimeCurrent() - TimeCurrent() % 86400);
-   if(today != lastDay) { lastDay = today; dayStartBalance = StopMetric(); }
+   if(today != lastDay)
+   {
+      // A zero or negative read is not a day start. The day is retried on the next tick.
+      double dayRead = StopMetric();
+      if(dayRead > 0) { lastDay = today; dayStartBalance = dayRead; }
+   }
 
    // Emergency close on max drawdown
    if(MaxDrawdownExceeded()) { CloseAllGrid(); return; }
