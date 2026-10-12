@@ -41,6 +41,7 @@ input double PF_NoSLRiskPct        = 2.0;    // Risk assumed for an open positio
 #define PF_GV_FLOW  "PF_NetFlow"
 #define PF_GV_FLOWT "PF_FlowTime"
 #define PF_GV_FLOWK "PF_FlowTicket"
+#define PF_GV_ACK   "PF_ResetAck"     // 1 once a Guard_ResetHalt reset has run; cleared when the input is false
 
 struct PFAlloc
 {

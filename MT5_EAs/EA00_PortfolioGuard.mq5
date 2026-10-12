@@ -18,7 +18,7 @@ input group "=== Portfolio Guard ==="
 input double Guard_HardStopDDPct = 20.0;  // Close managed positions and halt at this drawdown from peak
 input long   Guard_MagicFrom     = 10001; // Managed magic numbers, from
 input long   Guard_MagicTo       = 10099; // Managed magic numbers, to
-input bool   Guard_ResetHalt     = false; // Clear a halt and restart the peak from current trading equity
+input bool   Guard_ResetHalt     = false; // One-shot: clear a halt and restart the peak. Set false and restart to re-arm.
 input int    Guard_LogMinutes    = 60;    // Minutes between equity log rows (0 = off)
 input string Guard_LogFile       = "portfolio_equity_log.csv";
 
@@ -33,13 +33,19 @@ datetime lastLog = 0;
 
 int OnInit()
 {
-   if(Guard_ResetHalt)
+   // One-shot reset. The ack flag stops a restart with Guard_ResetHalt still true from
+   // resetting again. Setting the input to false re-arms it on the next start.
+   string ka = PF_Key(PF_GV_ACK);
+   if(!Guard_ResetHalt)
+      GlobalVariableSet(ka, 0);
+   else if(!GlobalVariableCheck(ka) || GlobalVariableGet(ka) <= 0)
    {
       PF_SyncFlows(true);
       GlobalVariableSet(PF_Key(PF_GV_HALT), 0);
       GlobalVariableSet(PF_Key(PF_GV_PEAK), PF_AdjEquity());
+      GlobalVariableSet(ka, 1);
       Print("Portfolio Guard: halt cleared, peak trading equity reset to ", DoubleToString(PF_AdjEquity(), 2),
-            ". Set Guard_ResetHalt back to false.");
+            ". This reset ran once. Set Guard_ResetHalt to false and restart to re-arm it.");
    }
    EventSetTimer(5);
    Guard();
