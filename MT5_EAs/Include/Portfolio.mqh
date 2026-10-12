@@ -169,6 +169,8 @@ void PF_Update(bool force = false)
 {
    if(PF_Bypass()) return;
    PF_SyncFlows(force);
+   // A zero or negative raw read is not a sample. With net withdrawals, adjusted equity can still be positive here.
+   if(AccountInfoDouble(ACCOUNT_EQUITY) <= 0) return;
    double adj = PF_AdjEquity();
    if(adj <= 0) return;
 
