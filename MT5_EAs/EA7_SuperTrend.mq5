@@ -40,22 +40,57 @@ int OnInit()
    return INIT_SUCCEEDED;
 }
 
-// Compute SuperTrend manually
+// Bars replayed to build the SuperTrend state; the band recursion converges well inside this window
+const int ST_LookbackBars = 300;
+
+// SuperTrend at `bar`, replayed recursively from ST_LookbackBars earlier so the
+// trailing bands carry state the way the indicator does
 void CalcSuperTrend(int bar, double &stValue, int &stDir)
 {
-   if(CopyBuffer(atrHandle, 0, bar, 1, atrBuf) < 1) { stValue = 0; stDir = 0; return; }
-   double atr  = atrBuf[0];
-   double high = iHigh(_Symbol, PERIOD_CURRENT, bar);
-   double low  = iLow(_Symbol, PERIOD_CURRENT, bar);
-   double hl2  = (high + low) / 2.0;
+   double atrs[], highs[], lows[], closes[];
+   ArraySetAsSeries(atrs,   true);
+   ArraySetAsSeries(highs,  true);
+   ArraySetAsSeries(lows,   true);
+   ArraySetAsSeries(closes, true);
+   int n = ST_LookbackBars;
+   if(CopyBuffer(atrHandle, 0, bar, n, atrs) < n)            { stValue = 0; stDir = 0; return; }
+   if(CopyHigh (_Symbol, PERIOD_CURRENT, bar, n, highs)  < n) { stValue = 0; stDir = 0; return; }
+   if(CopyLow  (_Symbol, PERIOD_CURRENT, bar, n, lows)   < n) { stValue = 0; stDir = 0; return; }
+   if(CopyClose(_Symbol, PERIOD_CURRENT, bar, n, closes) < n) { stValue = 0; stDir = 0; return; }
 
-   double upperBand = hl2 + ATR_Multiplier * atr;
-   double lowerBand = hl2 - ATR_Multiplier * atr;
-   double close     = iClose(_Symbol, PERIOD_CURRENT, bar);
+   // Index n-1 is the oldest bar: seed the bands there and walk forward in time
+   double prevUp = 0, prevDn = 0, prevST = 0, prevClose = 0;
+   for(int i = n - 1; i >= 0; i--)
+   {
+      double hl2     = (highs[i] + lows[i]) / 2.0;
+      double basicUp = hl2 + ATR_Multiplier * atrs[i];
+      double basicDn = hl2 - ATR_Multiplier * atrs[i];
+      double finalUp, finalDn, st;
 
-   // Simple approximation - in production use a proper buffer
-   stValue = (close > hl2) ? lowerBand : upperBand;
-   stDir   = (close > stValue) ? 1 : -1;
+      if(i == n - 1)
+      {
+         finalUp = basicUp;
+         finalDn = basicDn;
+         st      = basicUp;   // assume downtrend at the seed; the window washes this out
+      }
+      else
+      {
+         // A band only moves in the tightening direction unless price has crossed it
+         finalUp = (basicUp < prevUp || prevClose > prevUp) ? basicUp : prevUp;
+         finalDn = (basicDn > prevDn || prevClose < prevDn) ? basicDn : prevDn;
+
+         if(prevST == prevUp) st = (closes[i] <= finalUp) ? finalUp : finalDn;  // was downtrend
+         else                 st = (closes[i] >= finalDn) ? finalDn : finalUp;  // was uptrend
+      }
+
+      prevUp = finalUp;
+      prevDn = finalDn;
+      prevST = st;
+      prevClose = closes[i];
+   }
+
+   stValue = prevST;
+   stDir   = (closes[0] > prevST) ? 1 : -1;
 }
 
 bool IsTradingSession()
@@ -102,13 +137,13 @@ void ManageTrailing()
       if(type == POSITION_TYPE_BUY)
       {
          double newSL = stVal - atr * ATR_SL_Mult;
-         if(newSL > curSL + _Point)
+         if(newSL < SymbolInfoDouble(_Symbol, SYMBOL_BID) && newSL > curSL + _Point)
             trade.PositionModify(ticket, newSL, curTP);
       }
       else
       {
          double newSL = stVal + atr * ATR_SL_Mult;
-         if(curSL == 0 || newSL < curSL - _Point)
+         if(newSL > SymbolInfoDouble(_Symbol, SYMBOL_ASK) && (curSL == 0 || newSL < curSL - _Point))
             trade.PositionModify(ticket, newSL, curTP);
       }
    }

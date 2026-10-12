@@ -115,7 +115,7 @@ void OnTick()
    bool nearMidBear = close >= mid - atr * PullbackZone && close <= mid + atr * PullbackZone && close < slow;
 
    // Price bounced off mid MA
-   bool prevClose    = iClose(_Symbol, PERIOD_CURRENT, 2);
+   double prevClose  = iClose(_Symbol, PERIOD_CURRENT, 2);
    bool bouncedUp    = prevClose < mid && close > mid;
    bool bouncedDown  = prevClose > mid && close < mid;
 

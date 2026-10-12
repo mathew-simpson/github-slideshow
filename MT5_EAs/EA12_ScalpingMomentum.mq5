@@ -106,6 +106,11 @@ void OnTick()
    datetime today = (datetime)(TimeCurrent() - TimeCurrent() % 86400);
    if(today != lastDay) { lastDay = today; dayStartBalance = AccountInfoDouble(ACCOUNT_BALANCE); }
 
+   static datetime lastBar = 0;
+   datetime curBar = iTime(_Symbol, PERIOD_CURRENT, 0);
+   if(curBar == lastBar) return;
+   lastBar = curBar;
+
    if(!IsScalpSession())             return;
    if(DailyLossExceeded())           return;
    if(CountOpenTrades() >= MaxTrades) return;

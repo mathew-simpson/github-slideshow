@@ -93,7 +93,9 @@ void OnTick()
 
    if(CopyBuffer(macdHandle, 0, 0, 4, macdMain)   < 4) return;
    if(CopyBuffer(macdHandle, 1, 0, 4, macdSignal) < 4) return;
-   if(CopyBuffer(macdHandle, 2, 0, 4, macdHist)   < 4) return;
+   // iMACD exposes only main (0) and signal (1); the histogram is their difference
+   ArrayResize(macdHist, 4);
+   for(int i = 0; i < 4; i++) macdHist[i] = macdMain[i] - macdSignal[i];
    if(CopyBuffer(adxHandle,  0, 0, 2, adxBuf)     < 2) return;
    if(CopyBuffer(atrHandle,  0, 0, 2, atrBuf)     < 2) return;
 

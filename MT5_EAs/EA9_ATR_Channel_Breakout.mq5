@@ -97,10 +97,11 @@ void OnTick()
    if(CopyBuffer(atrHandle, 0, 0, 2, atrBuf) < 2) return;
    double atr = atrBuf[1];
 
-   // Find N-bar high and low (excluding current bar)
-   double nBarHigh = iHigh(_Symbol, PERIOD_CURRENT, 1);
-   double nBarLow  = iLow(_Symbol, PERIOD_CURRENT, 1);
-   for(int i = 2; i <= Channel_Period; i++)
+   // Channel high and low over the Channel_Period bars before the signal bar (bars 2..N+1).
+   // Bar 1 is the signal bar and must not be part of its own channel.
+   double nBarHigh = iHigh(_Symbol, PERIOD_CURRENT, 2);
+   double nBarLow  = iLow(_Symbol, PERIOD_CURRENT, 2);
+   for(int i = 3; i <= Channel_Period + 1; i++)
    {
       nBarHigh = MathMax(nBarHigh, iHigh(_Symbol, PERIOD_CURRENT, i));
       nBarLow  = MathMin(nBarLow,  iLow(_Symbol, PERIOD_CURRENT, i));
