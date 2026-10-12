@@ -40,3 +40,28 @@ exist yet and would be new EAs or new modes, not improvements to existing ones.
 2. Promote only EAs that pass every gate on out-of-sample data. Do not tune on the holdout window.
 3. Pending-order variants are not started. Add them only if a family's market-order version passes and the
    entry-timing loss is measured.
+
+## Both sides of each open choice
+
+Where a defect fix changes which trades happen, the default keeps the legacy behaviour and a switch turns the
+new behaviour on. The walk-forward pipeline can then run both sides on the same data without a code change.
+Defaults are unchanged, so existing results still mean what they meant.
+
+| EA | Switch | Default (legacy) | Other side | Trade-off |
+|----|--------|------------------|------------|-----------|
+| EA3 | `UseSqueezeFilter` | off: breakouts unfiltered, squeeze inputs unused | on: breakout only after `SquezeBars` bars of narrow bands | Fewer, cleaner breakouts vs. the trade count gate (>= 50 OOS trades/yr) |
+| EA11 | `UseEquityStops` | off: daily and grid stops use realized balance | on: equity, so open grid losses trigger the stops | Earlier cut-off on bad grids vs. more forced exits in a normal drawdown |
+
+To test a side, set it in `wf_plan.json` under that EA's `"fixed"` block, using JSON `true` or `false`, e.g.
+`"fixed": {"UseSqueezeFilter": true}`, then run the pipeline into a separate report folder for each side and compare
+the leaderboards. Do not pick the side from the holdout window.
+
+Not switched, and why:
+
+- **EA15 session clock:** the fix depends on the broker's UTC offset and its DST rules, which only you know. Set it once
+  you have confirmed the offset; the code change is the same in either case.
+- **EA5 Chikou:** the correct buffer convention depends on the MT5 build. Verify it against the terminal before changing it.
+- **EA14 divergence:** not implemented. Implementing it would be a new strategy, not a fix. Build it as its own EA
+  only if the CCI re-cross version is worth extending.
+- **EA1 trailing stop:** tightens to 1 ATR from the first tick. Whether that is wanted is a design choice; the
+  walk-forward run will show whether it hurts.

@@ -24,6 +24,7 @@ input group "=== Risk Management ==="
 input double InitRiskPct    = 0.5;    // Initial trade risk %
 input double MaxDrawdownPct = 8.0;    // Hard stop entire grid
 input double MaxDailyLoss   = 5.0;
+input bool   UseEquityStops  = false; // true = daily and grid stops use equity (includes open P/L); false = realized balance (legacy)
 
 input group "=== Session Filter ==="
 input int    StartHour      = 7;
@@ -34,6 +35,9 @@ int    emaHandle, atrHandle;
 double emaBuf[], atrBuf[];
 double dayStartBalance  = 0;
 double gridStartBalance = 0;
+
+// Balance the stops measure: realized (legacy) or equity (includes open grid P/L)
+double StopMetric() { return AccountInfoDouble(UseEquityStops ? ACCOUNT_EQUITY : ACCOUNT_BALANCE); }
 bool   gridActive       = false;
 int    gridDirection    = 0;   // 1 = long grid, -1 = short grid
 int    gridLevel        = 0;
@@ -52,7 +56,7 @@ int OnInit()
    ArraySetAsSeries(atrBuf, true);
 
    trade.SetExpertMagicNumber(10011);
-   dayStartBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+   dayStartBalance = StopMetric();
    return INIT_SUCCEEDED;
 }
 
@@ -64,7 +68,7 @@ bool IsTradingSession()
 
 bool DailyLossExceeded()
 {
-   double balance  = AccountInfoDouble(ACCOUNT_BALANCE);
+   double balance  = StopMetric();
    double drawdown = (dayStartBalance - balance) / dayStartBalance * 100.0;
    return (drawdown >= MaxDailyLoss);
 }
@@ -72,7 +76,7 @@ bool DailyLossExceeded()
 bool MaxDrawdownExceeded()
 {
    if(!gridActive) return false;
-   double balance  = AccountInfoDouble(ACCOUNT_BALANCE);
+   double balance  = StopMetric();
    double drawdown = (gridStartBalance - balance) / gridStartBalance * 100.0;
    return (drawdown >= MaxDrawdownPct);
 }
@@ -104,7 +108,7 @@ void OnTick()
    PF_Update();
    static datetime lastDay = 0;
    datetime today = (datetime)(TimeCurrent() - TimeCurrent() % 86400);
-   if(today != lastDay) { lastDay = today; dayStartBalance = AccountInfoDouble(ACCOUNT_BALANCE); }
+   if(today != lastDay) { lastDay = today; dayStartBalance = StopMetric(); }
 
    // Emergency close on max drawdown
    if(MaxDrawdownExceeded()) { CloseAllGrid(); return; }
@@ -143,7 +147,7 @@ void OnTick()
             gridDirection = 1;
             gridLevel     = 1;
             gridNextPrice = ask - atr * GridATRMult;
-            gridStartBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+            gridStartBalance = StopMetric();
          }
       }
       else if(bearTrend)
@@ -158,7 +162,7 @@ void OnTick()
             gridDirection = -1;
             gridLevel     = 1;
             gridNextPrice = bid + atr * GridATRMult;
-            gridStartBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+            gridStartBalance = StopMetric();
          }
       }
       return;

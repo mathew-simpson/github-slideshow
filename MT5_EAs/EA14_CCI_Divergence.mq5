@@ -1,6 +1,7 @@
 //+------------------------------------------------------------------+
-//| EA14 - CCI Divergence + Trend                                   |
-//| CCI extremes with price divergence signal, 200 EMA trend filter |
+//| EA14 - CCI Extremes + Trend                                     |
+//| CCI re-crossing oversold/overbought levels, 200 EMA trend filter|
+//| No divergence check is implemented                              |
 //+------------------------------------------------------------------+
 #property version "1.00"
 #include <Trade\Trade.mqh>
