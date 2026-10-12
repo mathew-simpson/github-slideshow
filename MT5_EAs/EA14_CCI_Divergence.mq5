@@ -4,7 +4,7 @@
 //+------------------------------------------------------------------+
 #property version "1.00"
 #include <Trade\Trade.mqh>
-#include "Include/MM_Common.mqh"
+#include "Include/Portfolio.mqh"
 
 input int    CCI_Period   = 20;   input double CCI_OB        = 100.0;
 input double CCI_OS       = -100.0; input int  ATR_Period    = 14;
@@ -32,6 +32,7 @@ int OnInit()
 
 void OnTick()
 {
+   PF_Update();
    static datetime lb = 0; datetime cb = iTime(_Symbol, PERIOD_CURRENT, 0);
    if(cb == lb) return; lb = cb;
    if(!MM_DailyLossOK(dayStart, MaxDailyLoss)) return;
@@ -51,8 +52,8 @@ void OnTick()
    bool sellSignal = cciBuf[2] > CCI_OB && cciBuf[1] <= CCI_OB && close < ema;
 
    if(buySignal)
-   { double sl = ask-atr*ATR_SL_Mult; trade.Buy(MM_CalcLots(ask-sl,RiskPercent,10014),_Symbol,ask,sl,ask+atr*ATR_TP_Mult,"EA14 Buy"); }
+   { double sl = ask-atr*ATR_SL_Mult; double lots = PF_Lots(ORDER_TYPE_BUY, ask, sl, RiskPercent, 10014); if(lots > 0) trade.Buy(lots, _Symbol,ask,sl,ask+atr*ATR_TP_Mult,"EA14 Buy"); }
    else if(sellSignal)
-   { double sl = bid+atr*ATR_SL_Mult; trade.Sell(MM_CalcLots(sl-bid,RiskPercent,10014),_Symbol,bid,sl,bid-atr*ATR_TP_Mult,"EA14 Sell"); }
+   { double sl = bid+atr*ATR_SL_Mult; double lots = PF_Lots(ORDER_TYPE_SELL, bid, sl, RiskPercent, 10014); if(lots > 0) trade.Sell(lots, _Symbol,bid,sl,bid-atr*ATR_TP_Mult,"EA14 Sell"); }
 }
 void OnDeinit(const int reason) {}

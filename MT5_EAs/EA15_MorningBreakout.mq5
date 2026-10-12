@@ -4,7 +4,7 @@
 //+------------------------------------------------------------------+
 #property version "1.00"
 #include <Trade\Trade.mqh>
-#include "Include/MM_Common.mqh"
+#include "Include/Portfolio.mqh"
 
 input int    AsianStartH  = 0;    input int    AsianEndH    = 7;
 input int    LondonOpenH  = 7;    input int    TradeEndH    = 12;
@@ -53,10 +53,11 @@ void BuildAsianRange()
 
 void OnTick()
 {
+   PF_Update();
    static datetime lb = 0; datetime cb = iTime(_Symbol, PERIOD_CURRENT, 0);
    if(cb == lb) return; lb = cb;
 
-   int hour = TimeHour(TimeCurrent());
+   int hour = MM_Hour(TimeCurrent());
    // Reset range at end of day
    static datetime lastDay = 0;
    datetime today = (datetime)(TimeCurrent() - TimeCurrent() % 86400);
@@ -81,8 +82,8 @@ void OnTick()
    bool breakDown = prev >= asianLow  && close < asianLow;
 
    if(breakUp)
-   { double sl = ask-atr*ATR_SL_Mult; trade.Buy(MM_CalcLots(ask-sl,RiskPercent,10015),_Symbol,ask,sl,ask+atr*ATR_TP_Mult,"EA15 Asian BO Buy"); }
+   { double sl = ask-atr*ATR_SL_Mult; double lots = PF_Lots(ORDER_TYPE_BUY, ask, sl, RiskPercent, 10015); if(lots > 0) trade.Buy(lots, _Symbol,ask,sl,ask+atr*ATR_TP_Mult,"EA15 Asian BO Buy"); }
    else if(breakDown)
-   { double sl = bid+atr*ATR_SL_Mult; trade.Sell(MM_CalcLots(sl-bid,RiskPercent,10015),_Symbol,bid,sl,bid-atr*ATR_TP_Mult,"EA15 Asian BO Sell"); }
+   { double sl = bid+atr*ATR_SL_Mult; double lots = PF_Lots(ORDER_TYPE_SELL, bid, sl, RiskPercent, 10015); if(lots > 0) trade.Sell(lots, _Symbol,bid,sl,bid-atr*ATR_TP_Mult,"EA15 Asian BO Sell"); }
 }
 void OnDeinit(const int reason) {}
