@@ -78,15 +78,16 @@ int CloseManaged()
 void Guard()
 {
    PF_Update(true);
-   // No sample from the broker: never start a halt on a zero equity read. A real loss that
-   // takes trading equity to zero or below still halts, because the drawdown then exceeds the limit.
-   if(AccountInfoDouble(ACCOUNT_EQUITY) <= 0) return;
-   double dd = PF_DrawdownPct();
-   if(!PF_Halted() && dd >= Guard_HardStopDDPct)
+   // Raw equity at or below zero is a real loss to zero, so it halts like any drawdown.
+   // A zero read from the broker halts too; reset with Guard_ResetHalt once the read is confirmed.
+   double raw = AccountInfoDouble(ACCOUNT_EQUITY);
+   double dd  = PF_DrawdownPct();
+   if(!PF_Halted() && (raw <= 0 || dd >= Guard_HardStopDDPct))
    {
       GlobalVariableSet(PF_Key(PF_GV_HALT), 1);
-      Print("Portfolio Guard: drawdown ", DoubleToString(dd, 2), "% hit the ", DoubleToString(Guard_HardStopDDPct, 1),
-            "% hard stop. Closing managed positions; new entries halted until Guard_ResetHalt.");
+      Print("Portfolio Guard: ", raw <= 0 ? "account equity is zero or below"
+                                          : "drawdown " + DoubleToString(dd, 2) + "% hit the " + DoubleToString(Guard_HardStopDDPct, 1) + "% hard stop",
+            ". Closing managed positions; new entries halted until Guard_ResetHalt.");
    }
    if(PF_Halted() && CloseManaged() > 0)
       Print("Portfolio Guard: some positions could not be closed yet (market closed?), retrying");
