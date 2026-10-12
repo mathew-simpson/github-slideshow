@@ -24,6 +24,7 @@ input group "=== Risk Management ==="
 input double InitRiskPct    = 0.5;    // Initial trade risk %
 input double MaxDrawdownPct = 8.0;    // Hard stop entire grid
 input double MaxDailyLoss   = 5.0;
+input bool   UseEquityStops  = false; // true = daily and grid stops use equity (includes open P/L); false = realized balance (legacy)
 
 input group "=== Session Filter ==="
 input int    StartHour      = 7;
@@ -34,12 +35,14 @@ int    emaHandle, atrHandle;
 double emaBuf[], atrBuf[];
 double dayStartBalance  = 0;
 double gridStartBalance = 0;
+
+// Balance the stops measure: realized (legacy) or equity (includes open grid P/L)
+double StopMetric() { return AccountInfoDouble(UseEquityStops ? ACCOUNT_EQUITY : ACCOUNT_BALANCE); }
 bool   gridActive       = false;
 int    gridDirection    = 0;   // 1 = long grid, -1 = short grid
 int    gridLevel        = 0;
 double gridNextPrice    = 0;
-double gridBaseLot      = 0;
-double gridInitThrottle = 1.0;   // Throttle in force when gridBaseLot was sized at entry
+double gridBaseLot      = 0;     // Entry base lot before the throttle and the caps
 
 int OnInit()
 {
@@ -53,7 +56,7 @@ int OnInit()
    ArraySetAsSeries(atrBuf, true);
 
    trade.SetExpertMagicNumber(10011);
-   dayStartBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+   dayStartBalance = StopMetric();
    return INIT_SUCCEEDED;
 }
 
@@ -65,7 +68,8 @@ bool IsTradingSession()
 
 bool DailyLossExceeded()
 {
-   double balance  = AccountInfoDouble(ACCOUNT_BALANCE);
+   double balance  = StopMetric();
+   if(balance <= 0) return false;   // A zero or negative read is not a measured loss
    double drawdown = (dayStartBalance - balance) / dayStartBalance * 100.0;
    return (drawdown >= MaxDailyLoss);
 }
@@ -73,7 +77,8 @@ bool DailyLossExceeded()
 bool MaxDrawdownExceeded()
 {
    if(!gridActive) return false;
-   double balance  = AccountInfoDouble(ACCOUNT_BALANCE);
+   double balance  = StopMetric();
+   if(balance <= 0) return false;   // A zero or negative read is not a measured loss
    double drawdown = (gridStartBalance - balance) / gridStartBalance * 100.0;
    return (drawdown >= MaxDrawdownPct);
 }
@@ -100,12 +105,29 @@ int CountGridPositions()
    return count;
 }
 
+// Base lot for the grid, before the throttle and the caps. Each add applies the current throttle and caps once, in PF_CapLots.
+// Returns the entry lot when the allocator is off or the stop cannot be priced, which is the pre-allocator size.
+double GridBaseBeforeCaps(ENUM_ORDER_TYPE type, double entry, double sl, double entryLots)
+{
+   if(!PF_Enabled || PF_Bypass()) return entryLots;
+   bool ok = false;
+   double riskPerLot = PF_TradeRisk(_Symbol, type, 1.0, entry, sl, ok);
+   if(!ok || riskPerLot <= 0) return entryLots;
+   double riskMoney = AccountInfoDouble(ACCOUNT_EQUITY) * InitRiskPct * PF_RiskMult(10011, _Symbol) / 100.0;
+   return PF_NormalizeLots(_Symbol, riskMoney / riskPerLot);
+}
+
 void OnTick()
 {
    PF_Update();
    static datetime lastDay = 0;
    datetime today = (datetime)(TimeCurrent() - TimeCurrent() % 86400);
-   if(today != lastDay) { lastDay = today; dayStartBalance = AccountInfoDouble(ACCOUNT_BALANCE); }
+   if(today != lastDay)
+   {
+      // A zero or negative read is not a day start. The day is retried on the next tick.
+      double dayRead = StopMetric();
+      if(dayRead > 0) { lastDay = today; dayStartBalance = dayRead; }
+   }
 
    // Emergency close on max drawdown
    if(MaxDrawdownExceeded()) { CloseAllGrid(); return; }
@@ -137,15 +159,14 @@ void OnTick()
          sl   = ask - atr * ATR_SL_Mult;
          tp   = ask + atr * ATR_TP_Mult;
          lots = PF_Lots(ORDER_TYPE_BUY, ask, sl, InitRiskPct, 10011);
-         gridBaseLot = lots;
-         gridInitThrottle = PF_ThrottleFactor();
+         gridBaseLot = GridBaseBeforeCaps(ORDER_TYPE_BUY, ask, sl, lots);
          if(lots > 0 && trade.Buy(lots, _Symbol, ask, sl, tp, "EA11 Grid Init Buy"))
          {
             gridActive    = true;
             gridDirection = 1;
             gridLevel     = 1;
             gridNextPrice = ask - atr * GridATRMult;
-            gridStartBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+            gridStartBalance = StopMetric();
          }
       }
       else if(bearTrend)
@@ -153,15 +174,14 @@ void OnTick()
          sl   = bid + atr * ATR_SL_Mult;
          tp   = bid - atr * ATR_TP_Mult;
          lots = PF_Lots(ORDER_TYPE_SELL, bid, sl, InitRiskPct, 10011);
-         gridBaseLot = lots;
-         gridInitThrottle = PF_ThrottleFactor();
+         gridBaseLot = GridBaseBeforeCaps(ORDER_TYPE_SELL, bid, sl, lots);
          if(lots > 0 && trade.Sell(lots, _Symbol, bid, sl, tp, "EA11 Grid Init Sell"))
          {
             gridActive    = true;
             gridDirection = -1;
             gridLevel     = 1;
             gridNextPrice = bid + atr * GridATRMult;
-            gridStartBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+            gridStartBalance = StopMetric();
          }
       }
       return;
@@ -176,9 +196,8 @@ void OnTick()
       {
          double sl = bid - atr * ATR_SL_Mult;
          double tp = bid + atr * ATR_TP_Mult;
-         // gridBaseLot carries the entry-time throttle. Divide it out and apply the current one, so the throttle counts once.
-         // PF_CapLots applies the allocation gate and caps
-         double lots = PF_CapLots(ORDER_TYPE_BUY, ask, sl, gridLots * PF_ThrottleFactor() / gridInitThrottle, 10011);
+         // gridBaseLot is the pre-throttle, pre-cap base. The current throttle and caps apply here, once.
+         double lots = PF_CapLots(ORDER_TYPE_BUY, ask, sl, gridLots * PF_ThrottleFactor(), 10011);
          if(lots > 0 && trade.Buy(lots, _Symbol, ask, sl, tp, "EA11 Grid Level " + IntegerToString(gridLevel + 1)))
          {
             gridLevel++;
@@ -189,9 +208,8 @@ void OnTick()
       {
          double sl = ask + atr * ATR_SL_Mult;
          double tp = ask - atr * ATR_TP_Mult;
-         // gridBaseLot carries the entry-time throttle. Divide it out and apply the current one, so the throttle counts once.
-         // PF_CapLots applies the allocation gate and caps
-         double lots = PF_CapLots(ORDER_TYPE_SELL, bid, sl, gridLots * PF_ThrottleFactor() / gridInitThrottle, 10011);
+         // gridBaseLot is the pre-throttle, pre-cap base. The current throttle and caps apply here, once.
+         double lots = PF_CapLots(ORDER_TYPE_SELL, bid, sl, gridLots * PF_ThrottleFactor(), 10011);
          if(lots > 0 && trade.Sell(lots, _Symbol, bid, sl, tp, "EA11 Grid Level " + IntegerToString(gridLevel + 1)))
          {
             gridLevel++;

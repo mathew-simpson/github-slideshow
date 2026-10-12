@@ -17,6 +17,7 @@ input double ATR_SL_Mult    = 1.5;
 input double ATR_TP_Mult    = 2.5;
 input int    SquezeBars     = 5;       // Bars to look back for squeeze
 input double SquezeThresh   = 0.002;   // Min width % for breakout
+input bool   UseSqueezeFilter = false; // true = trade breakouts only after a squeeze (false = legacy, filter unused)
 
 input group "=== Risk Management ==="
 input double RiskPercent    = 1.0;
@@ -74,14 +75,19 @@ int CountOpenTrades()
 
 bool IsSqueeze()
 {
-   // Check that prior bars had narrow bands (squeeze condition)
-   if(CopyBuffer(bbHandle, 1, 1, SquezeBars + 1, bbUpper) < SquezeBars + 1) return false;
-   if(CopyBuffer(bbHandle, 2, 1, SquezeBars + 1, bbLower) < SquezeBars + 1) return false;
-   if(CopyBuffer(bbHandle, 0, 1, SquezeBars + 1, bbMiddle) < SquezeBars + 1) return false;
+   // Check that prior bars had narrow bands (squeeze condition).
+   // Local buffers: the breakout test below reads bbUpper/bbLower at shifts 1-2.
+   double sqUpper[], sqLower[], sqMiddle[];
+   ArraySetAsSeries(sqUpper,  true);
+   ArraySetAsSeries(sqLower,  true);
+   ArraySetAsSeries(sqMiddle, true);
+   if(CopyBuffer(bbHandle, 1, 1, SquezeBars + 1, sqUpper)  < SquezeBars + 1) return false;
+   if(CopyBuffer(bbHandle, 2, 1, SquezeBars + 1, sqLower)  < SquezeBars + 1) return false;
+   if(CopyBuffer(bbHandle, 0, 1, SquezeBars + 1, sqMiddle) < SquezeBars + 1) return false;
 
    for(int i = 1; i <= SquezeBars; i++)
    {
-      double width = (bbUpper[i] - bbLower[i]) / bbMiddle[i];
+      double width = (sqUpper[i] - sqLower[i]) / sqMiddle[i];
       if(width > SquezeThresh) return false;
    }
    return true;
@@ -113,6 +119,8 @@ void OnTick()
    double atr     = atrBuf[1];
    double ask     = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    double bid     = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+
+   if(UseSqueezeFilter && !IsSqueeze()) return;
 
    // Breakout: price closes outside band after squeeze
    bool buyBreak  = (close1 > bbUpper[1] && close2 <= bbUpper[2]);

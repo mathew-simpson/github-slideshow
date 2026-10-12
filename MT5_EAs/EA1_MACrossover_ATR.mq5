@@ -81,7 +81,7 @@ void ManageTrailing()
    if(!UseTrailing) return;
 
    if(CopyBuffer(atrHandle, 0, 0, 2, atrBuf) < 2) return;
-   double atr = atrBuf[0];
+   double atr = atrBuf[1];
 
    for(int i = 0; i < PositionsTotal(); i++)
    {
@@ -123,6 +123,11 @@ void OnTick()
 
    ManageTrailing();
 
+   static datetime lastBar = 0;
+   datetime curBar = iTime(_Symbol, PERIOD_CURRENT, 0);
+   if(curBar == lastBar) return;
+   lastBar = curBar;
+
    if(!IsTradingSession())      return;
    if(DailyLossExceeded())      return;
    if(CountOpenTrades() >= MaxTrades) return;
@@ -134,7 +139,7 @@ void OnTick()
    bool crossUp   = fastMA[1] > slowMA[1] && fastMA[2] <= slowMA[2];
    bool crossDown = fastMA[1] < slowMA[1] && fastMA[2] >= slowMA[2];
 
-   double atr   = atrBuf[0];
+   double atr   = atrBuf[1];
    double ask   = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
    double bid   = SymbolInfoDouble(_Symbol, SYMBOL_BID);
 
