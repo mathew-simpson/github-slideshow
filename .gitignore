@@ -3,3 +3,7 @@ _site/
 .jekyll-metadata
 .bundle
 .mcp.json
+
+# MT5 walk-forward pipeline outputs
+MT5_EAs/tester/wf_runs/
+__pycache__/
