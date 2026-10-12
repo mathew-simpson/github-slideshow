@@ -43,12 +43,18 @@ int OnInit()
       GlobalVariableSet(ka, 0);
    else if(!GlobalVariableCheck(ka) || GlobalVariableGet(ka) <= 0)
    {
-      PF_SyncFlows(true);
-      GlobalVariableSet(PF_Key(PF_GV_HALT), 0);
-      GlobalVariableSet(PF_Key(PF_GV_PEAK), PF_AdjEquity());
-      GlobalVariableSet(ka, 1);
-      Print("Portfolio Guard: halt cleared, peak trading equity reset to ", DoubleToString(PF_AdjEquity(), 2),
-            ". This reset ran once. Set Guard_ResetHalt to false and restart to re-arm it.");
+      // A zero equity read must not clear the halt or store a peak. The reset stays armed for the next start.
+      if(AccountInfoDouble(ACCOUNT_EQUITY) <= 0)
+         Print("Portfolio Guard: reset not applied, account equity reads zero or below. The reset stays armed for the next start.");
+      else
+      {
+         PF_SyncFlows(true);
+         GlobalVariableSet(PF_Key(PF_GV_HALT), 0);
+         GlobalVariableSet(PF_Key(PF_GV_PEAK), PF_AdjEquity());
+         GlobalVariableSet(ka, 1);
+         Print("Portfolio Guard: halt cleared, peak trading equity reset to ", DoubleToString(PF_AdjEquity(), 2),
+               ". This reset ran once. Set Guard_ResetHalt to false and restart to re-arm it.");
+      }
    }
    EventSetTimer(5);
    Guard();
