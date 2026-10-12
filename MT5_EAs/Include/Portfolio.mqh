@@ -41,6 +41,7 @@ input double PF_NoSLRiskPct        = 2.0;    // Risk assumed for an open positio
 #define PF_GV_FLOW  "PF_NetFlow"
 #define PF_GV_FLOWT "PF_FlowTime"
 #define PF_GV_FLOWK "PF_FlowTicket"
+#define PF_GV_ACK   "PF_ResetAck"     // 1 once a Guard_ResetHalt reset has run; cleared when the input is false
 
 struct PFAlloc
 {
@@ -155,7 +156,8 @@ double PF_NetFlow()
    return GlobalVariableCheck(k) ? GlobalVariableGet(k) : 0.0;
 }
 
-//--- Equity with deposits and withdrawals taken out. Used by the guard, not for sizing.
+//--- Equity with deposits and withdrawals taken out. Drives the peak, drawdown, daily loss, halt and
+//    throttle factor in every EA. Position sizing and the caps use raw equity.
 double PF_AdjEquity()
 {
    return AccountInfoDouble(ACCOUNT_EQUITY) - PF_NetFlow();
@@ -167,6 +169,8 @@ void PF_Update(bool force = false)
 {
    if(PF_Bypass()) return;
    PF_SyncFlows(force);
+   // A zero or negative raw read is not a sample. With net withdrawals, adjusted equity can still be positive here.
+   if(AccountInfoDouble(ACCOUNT_EQUITY) <= 0) return;
    double adj = PF_AdjEquity();
    if(adj <= 0) return;
 

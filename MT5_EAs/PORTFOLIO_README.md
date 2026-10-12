@@ -9,7 +9,7 @@ Be aware of two things before compiling:
 
 | File | What it does |
 |------|--------------|
-| `Include/Portfolio.mqh` | Shared allocator. Every EA sizes through `PF_Lots()`. Applies the EA's allocation multiplier, a drawdown throttle, and account-wide caps. |
+| `Include/Portfolio.mqh` | Shared allocator. Strategy EAs size through `PF_Lots()`, which applies the EA's allocation multiplier and the drawdown throttle. EA11's grid adds call `PF_CapLots()` directly with the throttle applied. Both apply the allocation gate and the account-wide caps. |
 | `EA00_PortfolioGuard.mq5` | Watcher on one chart. Tracks peak trading equity, closes managed positions and halts new entries at the hard-stop drawdown, shows a dashboard, logs equity to CSV. |
 | `tester/portfolio_alloc.py` | Turns `wf_runs/leaderboard.csv` into `portfolio_allocation.csv`. Only EAs that pass every walk-forward gate get capital. |
 | `tester/test_portfolio_alloc.py` | Offline tests for the allocator. |
@@ -34,15 +34,16 @@ A trade is skipped, never rounded up, when the allowed volume is below the broke
 A trade is also skipped, not sized from a guess, when:
 - it has no stop loss, or the broker cannot price the stop distance;
 - the broker cannot price the margin for the symbol;
-- the EA has no active row in the allocation file (with `PF_RequireAlloc` true).
+- the EA has no active row in the allocation file. A missing file or a missing row blocks only
+  with `PF_RequireAlloc` true. A row set to `inactive` blocks in both modes.
 
 An open position with no stop, or one that cannot be priced, is counted at `PF_NoSLRiskPct`
 (2% of equity) toward the open-risk caps. That is only for accounting, never for sizing.
 
 ## Deposits, withdrawals and accounts
 
-- Deposits and withdrawals do not count as trading losses. The guard subtracts the net balance
-  operations from equity before it measures drawdown and the daily loss. A $20 withdrawal from
+- Deposits and withdrawals do not count as trading losses. Every EA and the guard subtract the net balance
+  operations from equity before they measure drawdown and the daily loss. A $20 withdrawal from
   a $100 account does not trigger the hard stop.
 - Fees, commissions and swaps stay in equity, so they still count as losses.
 - Every global variable key includes the account login. Two accounts on one terminal keep
@@ -50,7 +51,9 @@ An open position with no stop, or one that cannot be priced, is counted at `PF_N
 - The first run for a login starts a baseline at the current account history. Deposits and
   withdrawals made before that baseline are not counted. This also means a halt from an older
   build (keys without a login) is not inherited. Check that no position is open after an upgrade.
-- Sizing and the caps still use raw account equity, as before. Only the guard uses the adjusted figure.
+- Position sizing and the open-risk, currency and margin caps still use raw account equity, as before.
+  The peak, the drawdown throttle, the daily loss limit and the halt use the adjusted figure in every EA,
+  not only in the guard.
 
 ## Strategy Tester behaviour
 
@@ -75,10 +78,13 @@ the live account would.
 
 ## Halts, resets and stopping
 
-- **Halt:** the guard sets it at the hard-stop drawdown and closes managed positions. It stays
+- **Halt:** the guard sets it at the hard-stop drawdown, or when account equity stays at zero or
+  below for 10 seconds (a single zero read is only logged), and closes managed positions. It stays
   set until reset.
-- **Reset:** set `Guard_ResetHalt` to true, let the guard start, then set it back to false. The
-  peak restarts at the current trading equity. Do this only after reviewing why the halt fired.
+- **Reset:** set `Guard_ResetHalt` to true and restart the guard. The reset runs once: it clears
+  the halt and restarts the peak at the current trading equity. A later restart with the input
+  still true does nothing. To reset again, set the input to false, restart the guard, then set
+  it to true and restart. Do this only after reviewing why the halt fired.
 - **Stop new entries without a halt:** remove `portfolio_allocation.csv` from `Common\Files`
   (with `PF_RequireAlloc` true) or set every row to `inactive`. The EAs re-read the file at
   most once a minute.
@@ -101,7 +107,19 @@ the live account would.
 - **Timeframe.** The allocation file has no timeframe column, so an EA on a chart of another
   timeframe still gets capital.
 - **PF_Enabled = false** disables the halt and the caps along with the allocator. Do not use it live.
-- **Guard_ResetHalt** is not one-shot. If it stays true, every restart of the guard clears a halt.
+  The default stays true, so this is a live-use blocker for the owner to decide, not a code change.
 - The allocator scores EAs on OOS profit factor and drawdown only. It does not use IS data.
-- Nothing has been compiled in MetaEditor from this environment; run the compile on the
-  Windows machine before use.
+
+## Live-use blockers
+
+Do not go live on any account until each of these is decided and recorded:
+
+1. **Compile.** Nothing has been compiled in MetaEditor from the development environment. Compile
+   every EA and the guard on the Windows machine and fix any errors first.
+2. **Sizing base.** Equity or balance? Sizing currently uses equity; the tester and original EAs used balance.
+3. **Minimum account size.** Confirm the account can take the broker's minimum lot at the chosen
+   RiskPercent (see Small accounts above).
+4. **Margin cap at low leverage.** The 30% cap blocks 0.01 EURUSD at 1:30. Choose the leverage or the cap.
+5. **PF_Enabled.** Keep it true for live. Setting it false removes the halt and the caps.
+6. **Flow accounting.** A deposit or withdrawal can move the peak and cause a false halt. The fix is
+   designed but not built. See `FLOW_ACCOUNTING_DESIGN.md`. Blocker until it is built and passes the demo test plan.

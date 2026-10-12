@@ -14,11 +14,14 @@
 #include <Trade\Trade.mqh>
 #include "Include/Portfolio.mqh"
 
+// Seconds a zero equity read must last before the guard halts. The guard runs on every tick and every 5 s.
+#define GUARD_ZERO_CONFIRM_SEC 10
+
 input group "=== Portfolio Guard ==="
 input double Guard_HardStopDDPct = 20.0;  // Close managed positions and halt at this drawdown from peak
 input long   Guard_MagicFrom     = 10001; // Managed magic numbers, from
 input long   Guard_MagicTo       = 10099; // Managed magic numbers, to
-input bool   Guard_ResetHalt     = false; // Clear a halt and restart the peak from current trading equity
+input bool   Guard_ResetHalt     = false; // One-shot: clear a halt and restart the peak. Set false and restart to re-arm.
 input int    Guard_LogMinutes    = 60;    // Minutes between equity log rows (0 = off)
 input string Guard_LogFile       = "portfolio_equity_log.csv";
 
@@ -33,13 +36,25 @@ datetime lastLog = 0;
 
 int OnInit()
 {
-   if(Guard_ResetHalt)
+   // One-shot reset. The ack flag stops a restart with Guard_ResetHalt still true from
+   // resetting again. Setting the input to false re-arms it on the next start.
+   string ka = PF_Key(PF_GV_ACK);
+   if(!Guard_ResetHalt)
+      GlobalVariableSet(ka, 0);
+   else if(!GlobalVariableCheck(ka) || GlobalVariableGet(ka) <= 0)
    {
-      PF_SyncFlows(true);
-      GlobalVariableSet(PF_Key(PF_GV_HALT), 0);
-      GlobalVariableSet(PF_Key(PF_GV_PEAK), PF_AdjEquity());
-      Print("Portfolio Guard: halt cleared, peak trading equity reset to ", DoubleToString(PF_AdjEquity(), 2),
-            ". Set Guard_ResetHalt back to false.");
+      // A zero equity read must not clear the halt or store a peak. The reset stays armed for the next start.
+      if(AccountInfoDouble(ACCOUNT_EQUITY) <= 0)
+         Print("Portfolio Guard: reset not applied, account equity reads zero or below. The reset stays armed for the next start.");
+      else
+      {
+         PF_SyncFlows(true);
+         GlobalVariableSet(PF_Key(PF_GV_HALT), 0);
+         GlobalVariableSet(PF_Key(PF_GV_PEAK), PF_AdjEquity());
+         GlobalVariableSet(ka, 1);
+         Print("Portfolio Guard: halt cleared, peak trading equity reset to ", DoubleToString(PF_AdjEquity(), 2),
+               ". This reset ran once. Set Guard_ResetHalt to false and restart to re-arm it.");
+      }
    }
    EventSetTimer(5);
    Guard();
@@ -72,15 +87,30 @@ int CloseManaged()
 void Guard()
 {
    PF_Update(true);
-   // No sample from the broker: never start a halt on a zero equity read. A real loss that
-   // takes trading equity to zero or below still halts, because the drawdown then exceeds the limit.
-   if(AccountInfoDouble(ACCOUNT_EQUITY) <= 0) return;
+   // A zero or negative equity read is first logged as a read error and closes nothing. It halts
+   // only if the read is still zero GUARD_ZERO_CONFIRM_SEC later, so one bad broker sample is not enough.
+   static datetime zeroSince = 0;
+   double raw = AccountInfoDouble(ACCOUNT_EQUITY);
+   bool   zeroConfirmed = false;
+   if(raw > 0)
+      zeroSince = 0;
+   else if(zeroSince == 0)
+   {
+      zeroSince = TimeLocal();
+      Print("Portfolio Guard: read error, account equity read zero or below. Re-checking before any halt.");
+   }
+   else
+      zeroConfirmed = (TimeLocal() - zeroSince >= GUARD_ZERO_CONFIRM_SEC);
    double dd = PF_DrawdownPct();
-   if(!PF_Halted() && dd >= Guard_HardStopDDPct)
+   if(!PF_Halted() && (zeroConfirmed || (raw > 0 && dd >= Guard_HardStopDDPct)))
    {
       GlobalVariableSet(PF_Key(PF_GV_HALT), 1);
-      Print("Portfolio Guard: drawdown ", DoubleToString(dd, 2), "% hit the ", DoubleToString(Guard_HardStopDDPct, 1),
-            "% hard stop. Closing managed positions; new entries halted until Guard_ResetHalt.");
+      if(zeroConfirmed)
+         Print("Portfolio Guard: account equity still zero or below after ", GUARD_ZERO_CONFIRM_SEC,
+               " s. Closing managed positions; new entries halted until Guard_ResetHalt.");
+      else
+         Print("Portfolio Guard: drawdown ", DoubleToString(dd, 2), "% hit the ", DoubleToString(Guard_HardStopDDPct, 1),
+               "% hard stop. Closing managed positions; new entries halted until Guard_ResetHalt.");
    }
    if(PF_Halted() && CloseManaged() > 0)
       Print("Portfolio Guard: some positions could not be closed yet (market closed?), retrying");
