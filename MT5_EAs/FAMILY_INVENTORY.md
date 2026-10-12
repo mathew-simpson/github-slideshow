@@ -50,16 +50,21 @@ Defaults are unchanged, so existing results still mean what they meant.
 | EA | Switch | Default (legacy) | Other side | Trade-off |
 |----|--------|------------------|------------|-----------|
 | EA3 | `UseSqueezeFilter` | off: breakouts unfiltered, squeeze inputs unused | on: breakout only after `SquezeBars` bars of narrow bands | Fewer, cleaner breakouts vs. the trade count gate (>= 50 OOS trades/yr) |
+| EA15 | `ServerGMTOffset` | 0: session hours are broker server hours (legacy) | broker's UTC offset, e.g. 2 or 3: session hours follow GMT | Breakout timing vs. the London open; set it to the broker's offset for the period tested, since DST shifts it |
+| EA15 | `OneTradePerDay` | off: a stop-out can be followed by a new breakout the same day (legacy) | on: one breakout trade per day | Fewer trades and less re-entry risk vs. losing the second chance on a trend day |
 | EA11 | `UseEquityStops` | off: daily and grid stops use realized balance | on: equity, so open grid losses trigger the stops | Earlier cut-off on bad grids vs. more forced exits in a normal drawdown |
 
 To test a side, set it in `wf_plan.json` under that EA's `"fixed"` block, using JSON `true` or `false`, e.g.
 `"fixed": {"UseSqueezeFilter": true}`, then run the pipeline into a separate report folder for each side and compare
 the leaderboards. Do not pick the side from the holdout window.
 
+EA15 also has three bug fixes that are not switches, because they only change what the input says:
+`AsianEndH` now binds (the range is built at the close of the Asian window, so the default range is 00:00-07:00
+instead of 00:00-06:00); the M1 bar scan no longer stops at 299 bars; and `MinRangePips` uses a real pip size
+on 2- and 4-digit symbols.
+
 Not switched, and why:
 
-- **EA15 session clock:** the fix depends on the broker's UTC offset and its DST rules, which only you know. Set it once
-  you have confirmed the offset; the code change is the same in either case.
 - **EA5 Chikou:** the correct buffer convention depends on the MT5 build. Verify it against the terminal before changing it.
 - **EA14 divergence:** not implemented. Implementing it would be a new strategy, not a fix. Build it as its own EA
   only if the CCI re-cross version is worth extending.
