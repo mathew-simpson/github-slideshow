@@ -22,6 +22,8 @@
 
 ## Phase 2 - Walk-Forward Testing (Anti-Overfitting Core)
 
+Automated by `tester/wf_pipeline.py`; see `tester/README_walkforward.md`.
+
 ### Protocol
 1. Split data: **70% in-sample / 30% out-of-sample**
 2. Optimize ONLY on the in-sample window
