@@ -78,8 +78,8 @@ the live account would.
 
 ## Halts, resets and stopping
 
-- **Halt:** the guard sets it at the hard-stop drawdown, or when account equity reads zero or below,
-  and closes managed positions. It stays
+- **Halt:** the guard sets it at the hard-stop drawdown, or when account equity stays at zero or
+  below for 10 seconds (a single zero read is only logged), and closes managed positions. It stays
   set until reset.
 - **Reset:** set `Guard_ResetHalt` to true and restart the guard. The reset runs once: it clears
   the halt and restarts the peak at the current trading equity. A later restart with the input
