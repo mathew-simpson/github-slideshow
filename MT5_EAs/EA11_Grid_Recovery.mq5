@@ -7,6 +7,7 @@
 #property version   "1.00"
 
 #include <Trade\Trade.mqh>
+#include "Include/Portfolio.mqh"
 
 input group "=== Initial Trade Settings ==="
 input int    EMA_Period     = 50;
@@ -38,6 +39,7 @@ int    gridDirection    = 0;   // 1 = long grid, -1 = short grid
 int    gridLevel        = 0;
 double gridNextPrice    = 0;
 double gridBaseLot      = 0;
+double gridInitThrottle = 1.0;   // Throttle in force when gridBaseLot was sized at entry
 
 int OnInit()
 {
@@ -57,7 +59,7 @@ int OnInit()
 
 bool IsTradingSession()
 {
-   int hour = TimeHour(TimeCurrent());
+   int hour = MM_Hour(TimeCurrent());
    return (hour >= StartHour && hour < EndHour);
 }
 
@@ -98,23 +100,9 @@ int CountGridPositions()
    return count;
 }
 
-double CalcLotSize(double slPoints)
-{
-   double balance  = AccountInfoDouble(ACCOUNT_BALANCE);
-   double riskAmt  = balance * InitRiskPct / 100.0;
-   double tickVal  = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
-   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
-   double lotStep  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
-   double minLot   = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-   double maxLot   = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
-
-   double lots = riskAmt / (slPoints / tickSize * tickVal);
-   lots = MathFloor(lots / lotStep) * lotStep;
-   return MathMax(minLot, MathMin(maxLot, lots));
-}
-
 void OnTick()
 {
+   PF_Update();
    static datetime lastDay = 0;
    datetime today = (datetime)(TimeCurrent() - TimeCurrent() % 86400);
    if(today != lastDay) { lastDay = today; dayStartBalance = AccountInfoDouble(ACCOUNT_BALANCE); }
@@ -148,9 +136,10 @@ void OnTick()
       {
          sl   = ask - atr * ATR_SL_Mult;
          tp   = ask + atr * ATR_TP_Mult;
-         lots = CalcLotSize(ask - sl);
+         lots = PF_Lots(ORDER_TYPE_BUY, ask, sl, InitRiskPct, 10011);
          gridBaseLot = lots;
-         if(trade.Buy(lots, _Symbol, ask, sl, tp, "EA11 Grid Init Buy"))
+         gridInitThrottle = PF_ThrottleFactor();
+         if(lots > 0 && trade.Buy(lots, _Symbol, ask, sl, tp, "EA11 Grid Init Buy"))
          {
             gridActive    = true;
             gridDirection = 1;
@@ -163,9 +152,10 @@ void OnTick()
       {
          sl   = bid + atr * ATR_SL_Mult;
          tp   = bid - atr * ATR_TP_Mult;
-         lots = CalcLotSize(sl - bid);
+         lots = PF_Lots(ORDER_TYPE_SELL, bid, sl, InitRiskPct, 10011);
          gridBaseLot = lots;
-         if(trade.Sell(lots, _Symbol, bid, sl, tp, "EA11 Grid Init Sell"))
+         gridInitThrottle = PF_ThrottleFactor();
+         if(lots > 0 && trade.Sell(lots, _Symbol, bid, sl, tp, "EA11 Grid Init Sell"))
          {
             gridActive    = true;
             gridDirection = -1;
@@ -181,17 +171,15 @@ void OnTick()
    if(gridActive && gridLevel < MaxGridLevels)
    {
       double gridLots = gridBaseLot * MathPow(GridLotMult, gridLevel);
-      double minLot   = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-      double maxLot   = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
-      double lotStep  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
-      gridLots = MathFloor(gridLots / lotStep) * lotStep;
-      gridLots = MathMax(minLot, MathMin(maxLot, gridLots));
 
       if(gridDirection == 1 && bid <= gridNextPrice)
       {
          double sl = bid - atr * ATR_SL_Mult;
          double tp = bid + atr * ATR_TP_Mult;
-         if(trade.Buy(gridLots, _Symbol, ask, sl, tp, "EA11 Grid Level " + IntegerToString(gridLevel + 1)))
+         // gridBaseLot carries the entry-time throttle. Divide it out and apply the current one, so the throttle counts once.
+         // PF_CapLots applies the allocation gate and caps
+         double lots = PF_CapLots(ORDER_TYPE_BUY, ask, sl, gridLots * PF_ThrottleFactor() / gridInitThrottle, 10011);
+         if(lots > 0 && trade.Buy(lots, _Symbol, ask, sl, tp, "EA11 Grid Level " + IntegerToString(gridLevel + 1)))
          {
             gridLevel++;
             gridNextPrice = bid - atr * GridATRMult;
@@ -201,7 +189,10 @@ void OnTick()
       {
          double sl = ask + atr * ATR_SL_Mult;
          double tp = ask - atr * ATR_TP_Mult;
-         if(trade.Sell(gridLots, _Symbol, bid, sl, tp, "EA11 Grid Level " + IntegerToString(gridLevel + 1)))
+         // gridBaseLot carries the entry-time throttle. Divide it out and apply the current one, so the throttle counts once.
+         // PF_CapLots applies the allocation gate and caps
+         double lots = PF_CapLots(ORDER_TYPE_SELL, bid, sl, gridLots * PF_ThrottleFactor() / gridInitThrottle, 10011);
+         if(lots > 0 && trade.Sell(lots, _Symbol, bid, sl, tp, "EA11 Grid Level " + IntegerToString(gridLevel + 1)))
          {
             gridLevel++;
             gridNextPrice = ask + atr * GridATRMult;

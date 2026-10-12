@@ -42,10 +42,18 @@ int MM_CountTrades(ulong magic)
    return count;
 }
 
+//--- Hour of day for a datetime, read through one helper by the session filters
+int MM_Hour(datetime t)
+{
+   MqlDateTime st;
+   TimeToStruct(t, st);
+   return st.hour;
+}
+
 //--- Session filter
 bool MM_InSession(int startH, int endH)
 {
-   int h = TimeHour(TimeCurrent());
+   int h = MM_Hour(TimeCurrent());
    return (h >= startH && h < endH);
 }
 

@@ -7,6 +7,7 @@
 #property version   "1.00"
 
 #include <Trade\Trade.mqh>
+#include "Include/Portfolio.mqh"
 
 input group "=== MA Settings ==="
 input int    FastMA        = 10;
@@ -55,7 +56,7 @@ int OnInit()
 
 bool IsTradingSession()
 {
-   int hour = TimeHour(TimeCurrent());
+   int hour = MM_Hour(TimeCurrent());
    return (hour >= StartHour && hour < EndHour);
 }
 
@@ -75,23 +76,9 @@ int CountOpenTrades()
    return count;
 }
 
-double CalcLotSize(double slPoints)
-{
-   double balance  = AccountInfoDouble(ACCOUNT_BALANCE);
-   double riskAmt  = balance * RiskPercent / 100.0;
-   double tickVal  = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
-   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
-   double lotStep  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
-   double minLot   = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-   double maxLot   = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
-
-   double lots = riskAmt / (slPoints / tickSize * tickVal);
-   lots = MathFloor(lots / lotStep) * lotStep;
-   return MathMax(minLot, MathMin(maxLot, lots));
-}
-
 void OnTick()
 {
+   PF_Update();
    static datetime lastBar = 0;
    datetime curBar = iTime(_Symbol, PERIOD_CURRENT, 0);
    if(curBar == lastBar) return;
@@ -128,7 +115,7 @@ void OnTick()
    bool nearMidBear = close >= mid - atr * PullbackZone && close <= mid + atr * PullbackZone && close < slow;
 
    // Price bounced off mid MA
-   bool prevClose    = iClose(_Symbol, PERIOD_CURRENT, 2);
+   double prevClose  = iClose(_Symbol, PERIOD_CURRENT, 2);
    bool bouncedUp    = prevClose < mid && close > mid;
    bool bouncedDown  = prevClose > mid && close < mid;
 
@@ -136,15 +123,15 @@ void OnTick()
    {
       double sl   = mid - atr * ATR_SL_Mult;
       double tp   = ask + atr * ATR_TP_Mult;
-      double lots = CalcLotSize(ask - sl);
-      trade.Buy(lots, _Symbol, ask, sl, tp, "EA10 3MA Buy Pullback");
+      double lots = PF_Lots(ORDER_TYPE_BUY, ask, sl, RiskPercent, 10010);
+      if(lots > 0) trade.Buy(lots, _Symbol, ask, sl, tp, "EA10 3MA Buy Pullback");
    }
    else if(bearishAlign && (nearMidBear || bouncedDown))
    {
       double sl   = mid + atr * ATR_SL_Mult;
       double tp   = bid - atr * ATR_TP_Mult;
-      double lots = CalcLotSize(sl - bid);
-      trade.Sell(lots, _Symbol, bid, sl, tp, "EA10 3MA Sell Pullback");
+      double lots = PF_Lots(ORDER_TYPE_SELL, bid, sl, RiskPercent, 10010);
+      if(lots > 0) trade.Sell(lots, _Symbol, bid, sl, tp, "EA10 3MA Sell Pullback");
    }
 }
 

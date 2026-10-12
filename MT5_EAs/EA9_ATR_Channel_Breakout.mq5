@@ -7,6 +7,7 @@
 #property version   "1.00"
 
 #include <Trade\Trade.mqh>
+#include "Include/Portfolio.mqh"
 
 input group "=== Breakout Settings ==="
 input int    Channel_Period = 20;     // Bars to look back for high/low
@@ -42,7 +43,7 @@ int OnInit()
 
 bool IsTradingSession()
 {
-   int hour = TimeHour(TimeCurrent());
+   int hour = MM_Hour(TimeCurrent());
    return (hour >= StartHour && hour < EndHour);
 }
 
@@ -62,21 +63,6 @@ int CountOpenTrades()
    return count;
 }
 
-double CalcLotSize(double slPoints)
-{
-   double balance  = AccountInfoDouble(ACCOUNT_BALANCE);
-   double riskAmt  = balance * RiskPercent / 100.0;
-   double tickVal  = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_VALUE);
-   double tickSize = SymbolInfoDouble(_Symbol, SYMBOL_TRADE_TICK_SIZE);
-   double lotStep  = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
-   double minLot   = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MIN);
-   double maxLot   = SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_MAX);
-
-   double lots = riskAmt / (slPoints / tickSize * tickVal);
-   lots = MathFloor(lots / lotStep) * lotStep;
-   return MathMax(minLot, MathMin(maxLot, lots));
-}
-
 bool IsATRExpanding()
 {
    if(CopyBuffer(atrHandle, 0, 0, ATR_Avg_Period + 2, atrBuf) < ATR_Avg_Period + 2)
@@ -93,6 +79,7 @@ bool IsATRExpanding()
 
 void OnTick()
 {
+   PF_Update();
    static datetime lastBar = 0;
    datetime curBar = iTime(_Symbol, PERIOD_CURRENT, 0);
    if(curBar == lastBar) return;
@@ -131,15 +118,15 @@ void OnTick()
    {
       double sl   = ask - atr * ATR_SL_Mult;
       double tp   = ask + atr * ATR_TP_Mult;
-      double lots = CalcLotSize(ask - sl);
-      trade.Buy(lots, _Symbol, ask, sl, tp, "EA9 Channel Breakout Buy");
+      double lots = PF_Lots(ORDER_TYPE_BUY, ask, sl, RiskPercent, 10009);
+      if(lots > 0) trade.Buy(lots, _Symbol, ask, sl, tp, "EA9 Channel Breakout Buy");
    }
    else if(breakoutDown)
    {
       double sl   = bid + atr * ATR_SL_Mult;
       double tp   = bid - atr * ATR_TP_Mult;
-      double lots = CalcLotSize(sl - bid);
-      trade.Sell(lots, _Symbol, bid, sl, tp, "EA9 Channel Breakout Sell");
+      double lots = PF_Lots(ORDER_TYPE_SELL, bid, sl, RiskPercent, 10009);
+      if(lots > 0) trade.Sell(lots, _Symbol, bid, sl, tp, "EA9 Channel Breakout Sell");
    }
 }
 
