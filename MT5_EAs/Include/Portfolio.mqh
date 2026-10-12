@@ -156,7 +156,8 @@ double PF_NetFlow()
    return GlobalVariableCheck(k) ? GlobalVariableGet(k) : 0.0;
 }
 
-//--- Equity with deposits and withdrawals taken out. Used by the guard, not for sizing.
+//--- Equity with deposits and withdrawals taken out. Drives the peak, drawdown, daily loss, halt and
+//    throttle factor in every EA. Position sizing and the caps use raw equity.
 double PF_AdjEquity()
 {
    return AccountInfoDouble(ACCOUNT_EQUITY) - PF_NetFlow();

@@ -9,7 +9,7 @@ Be aware of two things before compiling:
 
 | File | What it does |
 |------|--------------|
-| `Include/Portfolio.mqh` | Shared allocator. Every EA sizes through `PF_Lots()`. Applies the EA's allocation multiplier, a drawdown throttle, and account-wide caps. |
+| `Include/Portfolio.mqh` | Shared allocator. Strategy EAs size through `PF_Lots()`, which applies the EA's allocation multiplier and the drawdown throttle. EA11's grid adds call `PF_CapLots()` directly with the throttle applied. Both apply the allocation gate and the account-wide caps. |
 | `EA00_PortfolioGuard.mq5` | Watcher on one chart. Tracks peak trading equity, closes managed positions and halts new entries at the hard-stop drawdown, shows a dashboard, logs equity to CSV. |
 | `tester/portfolio_alloc.py` | Turns `wf_runs/leaderboard.csv` into `portfolio_allocation.csv`. Only EAs that pass every walk-forward gate get capital. |
 | `tester/test_portfolio_alloc.py` | Offline tests for the allocator. |
@@ -34,15 +34,16 @@ A trade is skipped, never rounded up, when the allowed volume is below the broke
 A trade is also skipped, not sized from a guess, when:
 - it has no stop loss, or the broker cannot price the stop distance;
 - the broker cannot price the margin for the symbol;
-- the EA has no active row in the allocation file (with `PF_RequireAlloc` true).
+- the EA has no active row in the allocation file. A missing file or a missing row blocks only
+  with `PF_RequireAlloc` true. A row set to `inactive` blocks in both modes.
 
 An open position with no stop, or one that cannot be priced, is counted at `PF_NoSLRiskPct`
 (2% of equity) toward the open-risk caps. That is only for accounting, never for sizing.
 
 ## Deposits, withdrawals and accounts
 
-- Deposits and withdrawals do not count as trading losses. The guard subtracts the net balance
-  operations from equity before it measures drawdown and the daily loss. A $20 withdrawal from
+- Deposits and withdrawals do not count as trading losses. Every EA and the guard subtract the net balance
+  operations from equity before they measure drawdown and the daily loss. A $20 withdrawal from
   a $100 account does not trigger the hard stop.
 - Fees, commissions and swaps stay in equity, so they still count as losses.
 - Every global variable key includes the account login. Two accounts on one terminal keep
@@ -50,7 +51,9 @@ An open position with no stop, or one that cannot be priced, is counted at `PF_N
 - The first run for a login starts a baseline at the current account history. Deposits and
   withdrawals made before that baseline are not counted. This also means a halt from an older
   build (keys without a login) is not inherited. Check that no position is open after an upgrade.
-- Sizing and the caps still use raw account equity, as before. Only the guard uses the adjusted figure.
+- Position sizing and the open-risk, currency and margin caps still use raw account equity, as before.
+  The peak, the drawdown throttle, the daily loss limit and the halt use the adjusted figure in every EA,
+  not only in the guard.
 
 ## Strategy Tester behaviour
 
