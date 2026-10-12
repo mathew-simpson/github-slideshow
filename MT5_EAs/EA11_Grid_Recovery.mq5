@@ -42,8 +42,7 @@ bool   gridActive       = false;
 int    gridDirection    = 0;   // 1 = long grid, -1 = short grid
 int    gridLevel        = 0;
 double gridNextPrice    = 0;
-double gridBaseLot      = 0;
-double gridInitThrottle = 1.0;   // Throttle in force when gridBaseLot was sized at entry
+double gridBaseLot      = 0;     // Entry base lot before the throttle and the caps
 
 int OnInit()
 {
@@ -106,6 +105,18 @@ int CountGridPositions()
    return count;
 }
 
+// Base lot for the grid, before the throttle and the caps. Each add applies the current throttle and caps once, in PF_CapLots.
+// Returns the entry lot when the allocator is off or the stop cannot be priced, which is the pre-allocator size.
+double GridBaseBeforeCaps(ENUM_ORDER_TYPE type, double entry, double sl, double entryLots)
+{
+   if(!PF_Enabled || PF_Bypass()) return entryLots;
+   bool ok = false;
+   double riskPerLot = PF_TradeRisk(_Symbol, type, 1.0, entry, sl, ok);
+   if(!ok || riskPerLot <= 0) return entryLots;
+   double riskMoney = AccountInfoDouble(ACCOUNT_EQUITY) * InitRiskPct * PF_RiskMult(10011, _Symbol) / 100.0;
+   return PF_NormalizeLots(_Symbol, riskMoney / riskPerLot);
+}
+
 void OnTick()
 {
    PF_Update();
@@ -148,8 +159,7 @@ void OnTick()
          sl   = ask - atr * ATR_SL_Mult;
          tp   = ask + atr * ATR_TP_Mult;
          lots = PF_Lots(ORDER_TYPE_BUY, ask, sl, InitRiskPct, 10011);
-         gridBaseLot = lots;
-         gridInitThrottle = PF_ThrottleFactor();
+         gridBaseLot = GridBaseBeforeCaps(ORDER_TYPE_BUY, ask, sl, lots);
          if(lots > 0 && trade.Buy(lots, _Symbol, ask, sl, tp, "EA11 Grid Init Buy"))
          {
             gridActive    = true;
@@ -164,8 +174,7 @@ void OnTick()
          sl   = bid + atr * ATR_SL_Mult;
          tp   = bid - atr * ATR_TP_Mult;
          lots = PF_Lots(ORDER_TYPE_SELL, bid, sl, InitRiskPct, 10011);
-         gridBaseLot = lots;
-         gridInitThrottle = PF_ThrottleFactor();
+         gridBaseLot = GridBaseBeforeCaps(ORDER_TYPE_SELL, bid, sl, lots);
          if(lots > 0 && trade.Sell(lots, _Symbol, bid, sl, tp, "EA11 Grid Init Sell"))
          {
             gridActive    = true;
@@ -187,9 +196,8 @@ void OnTick()
       {
          double sl = bid - atr * ATR_SL_Mult;
          double tp = bid + atr * ATR_TP_Mult;
-         // gridBaseLot carries the entry-time throttle. Divide it out and apply the current one, so the throttle counts once.
-         // PF_CapLots applies the allocation gate and caps
-         double lots = PF_CapLots(ORDER_TYPE_BUY, ask, sl, gridLots * PF_ThrottleFactor() / gridInitThrottle, 10011);
+         // gridBaseLot is the pre-throttle, pre-cap base. The current throttle and caps apply here, once.
+         double lots = PF_CapLots(ORDER_TYPE_BUY, ask, sl, gridLots * PF_ThrottleFactor(), 10011);
          if(lots > 0 && trade.Buy(lots, _Symbol, ask, sl, tp, "EA11 Grid Level " + IntegerToString(gridLevel + 1)))
          {
             gridLevel++;
@@ -200,9 +208,8 @@ void OnTick()
       {
          double sl = ask + atr * ATR_SL_Mult;
          double tp = ask - atr * ATR_TP_Mult;
-         // gridBaseLot carries the entry-time throttle. Divide it out and apply the current one, so the throttle counts once.
-         // PF_CapLots applies the allocation gate and caps
-         double lots = PF_CapLots(ORDER_TYPE_SELL, bid, sl, gridLots * PF_ThrottleFactor() / gridInitThrottle, 10011);
+         // gridBaseLot is the pre-throttle, pre-cap base. The current throttle and caps apply here, once.
+         double lots = PF_CapLots(ORDER_TYPE_SELL, bid, sl, gridLots * PF_ThrottleFactor(), 10011);
          if(lots > 0 && trade.Sell(lots, _Symbol, bid, sl, tp, "EA11 Grid Level " + IntegerToString(gridLevel + 1)))
          {
             gridLevel++;
