@@ -49,11 +49,17 @@ int OnInit()
       else
       {
          PF_SyncFlows(true);
-         GlobalVariableSet(PF_Key(PF_GV_HALT), 0);
-         GlobalVariableSet(PF_Key(PF_GV_PEAK), PF_AdjEquity());
-         GlobalVariableSet(ka, 1);
-         Print("Portfolio Guard: halt cleared, peak trading equity reset to ", DoubleToString(PF_AdjEquity(), 2),
-               ". This reset ran once. Set Guard_ResetHalt to false and restart to re-arm it.");
+         // Adjusted equity (equity less net flows) can read zero or below while raw equity is positive. Nothing is stored then.
+         if(PF_AdjEquity() <= 0)
+            Print("Portfolio Guard: reset not applied, adjusted equity reads zero or below. The reset stays armed for the next start.");
+         else
+         {
+            GlobalVariableSet(PF_Key(PF_GV_HALT), 0);
+            GlobalVariableSet(PF_Key(PF_GV_PEAK), PF_AdjEquity());
+            GlobalVariableSet(ka, 1);
+            Print("Portfolio Guard: halt cleared, peak trading equity reset to ", DoubleToString(PF_AdjEquity(), 2),
+                  ". This reset ran once. Set Guard_ResetHalt to false and restart to re-arm it.");
+         }
       }
    }
    EventSetTimer(5);
