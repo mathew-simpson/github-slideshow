@@ -437,12 +437,46 @@ def cmd_propose(p, args):
 # run (Windows, MT5 PC)
 # --------------------------------------------------------------------------
 
+LOGIN_RE = re.compile(r"'(\d+)': trading has been enabled - (netting|hedging) mode", re.I)
+
+
+def account_check(t):
+    """Read the terminal journal and return (ok, message) for the account the tester will inherit.
+
+    The tester runs on the login of the terminal it is started from. Backtests are only
+    valid on a hedging account, and the loop only ever runs on logins listed in
+    tester.allowed_logins (demo accounts), so a real-money terminal is never touched.
+    """
+    allowed = {str(x) for x in t.get("allowed_logins", [])}
+    if not allowed:
+        return False, "tester.allowed_logins is empty; list the demo login(s) the tester may run on"
+    logs = sorted((Path(t["data_dir"]) / "logs").glob("*.log"))
+    last = None
+    for log in reversed(logs):
+        hits = LOGIN_RE.findall(read_text(log))
+        if hits:
+            last = hits[-1]
+            break
+    if not last:
+        return False, f"no login line found in {Path(t['data_dir']) / 'logs'}; open the terminal once so it logs in"
+    login, mode = last
+    if login not in allowed:
+        return False, f"terminal is logged into {login}, which is not in tester.allowed_logins {sorted(allowed)}"
+    if mode.lower() != "hedging":
+        return False, f"account {login} is in {mode} mode; the EAs need a hedging account"
+    return True, f"account {login}, hedging mode"
+
+
 def cmd_run(p, args):
     cfg = load_config(p)
     n = args.cycle or read_json(p.state)["open_cycle"]
     cdir = p.cycle_dir(n)
     t = cfg["tester"]
     data_dir = Path(t["data_dir"])
+    ok, msg = account_check(t)
+    print(f"account check: {msg}")
+    if not ok and not args.dry_run:
+        sys.exit("refusing to run backtests: " + msg)
     out = cdir / "reports"
     out.mkdir(parents=True, exist_ok=True)
     inis = sorted((cdir / "ini").glob("*.ini"))

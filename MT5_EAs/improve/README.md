@@ -53,6 +53,8 @@ seeds the current settings, and `rank` is kept for reference.
 - The holdout is only looked at after the OOS gates pass, and it can only veto.
 - Each EA gets 40 tries per OOS window. Past that the windows must be rolled forward, because enough
   attempts against one window will find something that fits it by chance.
+- `run` refuses to start unless the terminal journal shows a login from `tester.allowed_logins` (demo
+  only) in hedging mode.
 - Reports parse the English labels of MT5 reports; keep the terminal language English.
 
 ## Lessons

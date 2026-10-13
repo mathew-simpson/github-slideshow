@@ -2,6 +2,7 @@
   "tester": {
     "terminal": "C:\\Program Files\\MetaTrader 5\\terminal64.exe",
     "portable": false,
+    "allowed_logins": ["5057237545"],
     "data_dir": "C:\\Users\\YOU\\AppData\\Roaming\\MetaQuotes\\Terminal\\YOUR_TERMINAL_ID",
     "expert_prefix": "MT5_EAs\\",
     "ea_source_dir": "..",

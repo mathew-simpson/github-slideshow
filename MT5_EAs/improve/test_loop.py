@@ -172,5 +172,28 @@ class LoopTest(unittest.TestCase):
         self.assertNotIn(prop["param"], frozen)
 
 
+    def test_account_check(self):
+        logs = self.tmp / "data" / "logs"
+        logs.mkdir(parents=True)
+        t = {"data_dir": str(self.tmp / "data"), "allowed_logins": ["5057237545"]}
+        self.assertFalse(loop.account_check(t)[0])
+        line = "0\t16:14\tNetwork\t'{}': trading has been enabled - {} mode\n"
+        (logs / "20261013.log").write_text(line.format("100149667", "netting"), encoding="utf-16")
+        ok, msg = loop.account_check(t)
+        self.assertFalse(ok)
+        self.assertIn("not in tester.allowed_logins", msg)
+        (logs / "20261014.log").write_text(line.format("5057237545", "hedging"), encoding="utf-16")
+        self.assertTrue(loop.account_check(t)[0])
+        self.assertFalse(loop.account_check(dict(t, allowed_logins=[]))[0])
+        cfg = json.loads((self.root / "loop_config.json").read_text())
+        cfg["tester"]["data_dir"] = t["data_dir"]
+        (self.root / "loop_config.json").write_text(json.dumps(cfg))
+        (logs / "20261015.log").write_text(line.format("5057237545", "netting"), encoding="utf-16")
+        self.run_cli("init", "--ea-dir", str(self.tmp))
+        self.run_cli("propose", "--only", "EA1_MACrossover_ATR")
+        with self.assertRaises(SystemExit):
+            self.run_cli("run")
+
+
 if __name__ == "__main__":
     unittest.main()

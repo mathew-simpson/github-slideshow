@@ -9,6 +9,10 @@ step is handed to a session on that PC; everything else runs in the cloud checko
 - Nothing merges. Every cycle lands as commits on the loop branch behind a draft PR for the owner to review.
 - No live or demo orders are placed, changed or closed. Only the Strategy Tester runs.
 - The terminal login is never changed. If the tester needs a different account, stop and ask the owner.
+- Backtests only run on a terminal logged into a demo login listed in `tester.allowed_logins`, in hedging
+  mode. `loop.py run` reads the terminal journal and refuses otherwise, so a real-money terminal is never
+  used. Never add a real account to that list. Do not use `D:\MT5_EA` (logged into a real account) unless
+  the owner says it has been moved to a demo login and locked down.
 - Never edit files owned by another open thread or PR (the sweep, agent-repair and walk-forward work).
   The loop writes only inside `MT5_EAs/improve/`. A logic change to an `.mq5` is tested on the PC and comes
   back as a patch file under `cycles/NNN/patches/`, not as an edit to the EA in the repo.
