@@ -1,0 +1,192 @@
+{
+  "cycle": 0,
+  "open_cycle": 1,
+  "eas": {
+    "EA1_MACrossover_ATR": {
+      "params": {
+        "FastMA_Period": 20,
+        "SlowMA_Period": 50,
+        "ATR_SL_Mult": 1.5,
+        "ATR_TP_Mult": 3,
+        "TrailATRMult": 1
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    },
+    "EA2_RSI_MeanReversion": {
+      "params": {
+        "RSI_Period": 14,
+        "OversoldLevel": 30,
+        "OverboughtLvl": 70,
+        "ATR_SL_Mult": 1.5,
+        "ATR_TP_Mult": 2
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    },
+    "EA3_BollingerBand_Breakout": {
+      "params": {
+        "BB_Period": 20,
+        "BB_Deviation": 2,
+        "SquezeThresh": 0.002,
+        "ATR_SL_Mult": 1.5,
+        "ATR_TP_Mult": 2.5
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    },
+    "EA4_MACD_Momentum": {
+      "params": {
+        "MACD_Fast": 12,
+        "MACD_Slow": 26,
+        "ADX_MinLevel": 25,
+        "ATR_SL_Mult": 2,
+        "ATR_TP_Mult": 3
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    },
+    "EA5_Ichimoku_Trend": {
+      "params": {
+        "Tenkan_Period": 9,
+        "Kijun_Period": 26,
+        "ATR_SL_Mult": 2,
+        "ATR_TP_Mult": 3
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    },
+    "EA6_Stochastic_Swing": {
+      "params": {
+        "Stoch_K": 14,
+        "OversoldLevel": 20,
+        "OverboughtLvl": 80,
+        "ATR_SL_Mult": 1.8,
+        "ATR_TP_Mult": 2.5
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    },
+    "EA7_SuperTrend": {
+      "params": {
+        "ATR_Period": 10,
+        "ATR_Multiplier": 3,
+        "ATR_SL_Mult": 1,
+        "ATR_TP_Mult": 4
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    },
+    "EA8_PriceAction_PinBar": {
+      "params": {
+        "PinBodyRatio": 0.33,
+        "PinWickRatio": 0.6,
+        "EMA_Period": 200,
+        "ATR_SL_Mult": 1.5,
+        "ATR_TP_Mult": 3
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    },
+    "EA9_ATR_Channel_Breakout": {
+      "params": {
+        "Channel_Period": 20,
+        "ATR_Expand_Min": 1.1,
+        "ATR_SL_Mult": 1.5,
+        "ATR_TP_Mult": 3
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    },
+    "EA10_ThreeMAs_Trend": {
+      "params": {
+        "FastMA": 10,
+        "MidMA": 21,
+        "SlowMA": 50,
+        "PullbackZone": 0.5,
+        "ATR_TP_Mult": 2.5
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    },
+    "EA11_Grid_Recovery": {
+      "params": {
+        "EMA_Period": 50,
+        "GridATRMult": 0.75,
+        "ATR_TP_Mult": 3
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    },
+    "EA12_ScalpingMomentum": {
+      "params": {
+        "FastEMA": 5,
+        "SlowEMA": 13,
+        "ATR_SL_Mult": 1,
+        "ATR_TP_Mult": 1.5,
+        "MaxBarsHeld": 20
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    },
+    "EA13_ADX_DirectionalMove": {
+      "params": {
+        "ADX_Period": 14,
+        "ADX_MinLevel": 20,
+        "ATR_SL_Mult": 2,
+        "ATR_TP_Mult": 3
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    },
+    "EA14_CCI_Divergence": {
+      "params": {
+        "CCI_Period": 20,
+        "ATR_SL_Mult": 1.8,
+        "ATR_TP_Mult": 2.5
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    },
+    "EA15_MorningBreakout": {
+      "params": {
+        "TradeEndH": 12,
+        "ATR_SL_Mult": 1,
+        "ATR_TP_Mult": 2,
+        "MinRangePips": 10
+      },
+      "logic_flags": {},
+      "baseline": null,
+      "sweep_rank": null,
+      "params_source": "mq5"
+    }
+  }
+}

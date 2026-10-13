@@ -1,0 +1,127 @@
+{
+  "cycle": 1,
+  "created": "2026-10-13",
+  "proposals": {
+    "EA1_MACrossover_ATR": {
+      "kind": "param",
+      "param": "FastMA_Period",
+      "from": 20,
+      "to": 25,
+      "base_key": "6fabc58148",
+      "needs_baseline": true
+    },
+    "EA2_RSI_MeanReversion": {
+      "kind": "param",
+      "param": "RSI_Period",
+      "from": 14,
+      "to": 16,
+      "base_key": "266f4bef5d",
+      "needs_baseline": true
+    },
+    "EA3_BollingerBand_Breakout": {
+      "kind": "param",
+      "param": "BB_Period",
+      "from": 20,
+      "to": 22,
+      "base_key": "baadce6ab1",
+      "needs_baseline": true
+    },
+    "EA4_MACD_Momentum": {
+      "kind": "param",
+      "param": "MACD_Fast",
+      "from": 12,
+      "to": 14,
+      "base_key": "2ef1efda96",
+      "needs_baseline": true
+    },
+    "EA5_Ichimoku_Trend": {
+      "kind": "param",
+      "param": "Tenkan_Period",
+      "from": 9,
+      "to": 10,
+      "base_key": "30da4e39ef",
+      "needs_baseline": true
+    },
+    "EA6_Stochastic_Swing": {
+      "kind": "param",
+      "param": "Stoch_K",
+      "from": 14,
+      "to": 16,
+      "base_key": "334fd0e72f",
+      "needs_baseline": true
+    },
+    "EA7_SuperTrend": {
+      "kind": "param",
+      "param": "ATR_Period",
+      "from": 10,
+      "to": 11,
+      "base_key": "0ab55b20ff",
+      "needs_baseline": true
+    },
+    "EA8_PriceAction_PinBar": {
+      "kind": "param",
+      "param": "PinBodyRatio",
+      "from": 0.33,
+      "to": 0.38,
+      "base_key": "9bc2007af7",
+      "needs_baseline": true
+    },
+    "EA9_ATR_Channel_Breakout": {
+      "kind": "param",
+      "param": "Channel_Period",
+      "from": 20,
+      "to": 25,
+      "base_key": "69efdf9ae8",
+      "needs_baseline": true
+    },
+    "EA10_ThreeMAs_Trend": {
+      "kind": "param",
+      "param": "FastMA",
+      "from": 10,
+      "to": 12,
+      "base_key": "6e747070da",
+      "needs_baseline": true
+    },
+    "EA11_Grid_Recovery": {
+      "kind": "param",
+      "param": "EMA_Period",
+      "from": 50,
+      "to": 60,
+      "base_key": "b8b4a37ccb",
+      "needs_baseline": true
+    },
+    "EA12_ScalpingMomentum": {
+      "kind": "param",
+      "param": "FastEMA",
+      "from": 5,
+      "to": 6,
+      "base_key": "42bc1965f5",
+      "needs_baseline": true
+    },
+    "EA13_ADX_DirectionalMove": {
+      "kind": "param",
+      "param": "ADX_Period",
+      "from": 14,
+      "to": 16,
+      "base_key": "7c4b25ba47",
+      "needs_baseline": true
+    },
+    "EA14_CCI_Divergence": {
+      "kind": "param",
+      "param": "CCI_Period",
+      "from": 20,
+      "to": 22,
+      "base_key": "ad1ae207f0",
+      "needs_baseline": true
+    },
+    "EA15_MorningBreakout": {
+      "kind": "param",
+      "param": "TradeEndH",
+      "from": 12,
+      "to": 13,
+      "base_key": "9c61379df7",
+      "needs_baseline": true
+    }
+  },
+  "skipped": {}
+}

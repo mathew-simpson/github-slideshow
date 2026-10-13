@@ -452,7 +452,7 @@ def cmd_run(p, args):
         dst = out / f"{name}.htm"
         if dst.exists() and not args.force:
             continue
-        cmd = [t["terminal"], f"/config:{ini.resolve()}"]
+        cmd = [t["terminal"], f"/config:{ini.resolve()}"] + (["/portable"] if t.get("portable") else [])
         print(f"[{i}/{len(inis)}] {name}")
         if args.dry_run:
             print("   ", " ".join(f'"{c}"' if " " in c else c for c in cmd))
@@ -542,6 +542,9 @@ def judge(base, cand, acc):
             if not m or not m.get(seg) or m[seg].get("profit_factor") is None:
                 return "invalid", [f"{label} {seg} report missing or unparsed"]
     for label, m in (("baseline", base), ("candidate", cand)):
+        empty = [seg for seg in ("is", "oos") if not m[seg].get("total_trades")]
+        if empty:
+            return "invalid", [f"{label} {', '.join(empty)} has no trades (aborted or blocked test)"]
         hit = [seg for seg in SEGMENTS if (m.get(seg) or {}).get("stopped_out")]
         if hit:
             return "invalid", [f"{label} hit a margin stop-out in {', '.join(hit)} (check the tester account is hedging)"]

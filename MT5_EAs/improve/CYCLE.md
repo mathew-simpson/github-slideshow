@@ -41,10 +41,11 @@ step is handed to a session on that PC; everything else runs in the cloud checko
    running) with the block below, filled in with the cycle number. Then end the turn and wait for its
    message.
 
-   > Pull branch `<loop branch>` of mathew-simpson/github-slideshow into a local checkout (clone it to
-   > `C:\Users\bradb\OneDrive\Desktop\claude\loop_repo` if there is none). In `MT5_EAs\improve`, make sure
-   > `loop_config.local.json` has the real `tester.terminal` and `tester.data_dir` for this PC (create it from
-   > `loop_config.json` if missing; it is gitignored). For each `logic` proposal in
+   > Refresh `C:\Users\bradb\OneDrive\Desktop\claude\loop_repo` from branch `<loop branch>` of
+   > mathew-simpson/github-slideshow (the PC has no git: download the branch zip and copy `MT5_EAs\improve`
+   > over, keeping `loop_config.local.json` and `cycles\*\reports`). Use the tester terminal named in
+   > `loop_config.local.json` (`tester.terminal`, `tester.data_dir`, `tester.portable`). **Before running,
+   > confirm that terminal is logged into a hedging account; if it is netting, stop and report, do not run.** For each `logic` proposal in
    > `cycles\NNN\proposals.json`, add the described behaviour to that EA in the terminal's
    > `MQL5\Experts\MT5_EAs` folder behind the named `input bool` flag defaulting to `false`, compile it, and
    > keep the diff. Then run `python loop.py run --cycle NNN` and `python loop.py ingest --cycle NNN`.

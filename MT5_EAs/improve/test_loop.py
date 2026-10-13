@@ -133,6 +133,8 @@ class LoopTest(unittest.TestCase):
         holdout_bad = dict(ok, **{"holdout": m(0.8, 5, 40)})
         self.assertEqual(loop.judge(base, holdout_bad, acc)[0], "rejected")
         self.assertEqual(loop.judge(None, ok, acc)[0], "invalid")
+        aborted = dict(ok, **{"is": m(0.0, 0, 0)})
+        self.assertEqual(loop.judge(base, aborted, acc)[0], "invalid")
         so = dict(ok, **{"oos": dict(m(1.5, 8, 150), stopped_out=True)})
         self.assertEqual(loop.judge(base, so, acc)[0], "invalid")
 
