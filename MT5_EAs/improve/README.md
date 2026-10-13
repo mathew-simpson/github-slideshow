@@ -59,4 +59,4 @@ seeds the current settings, and `rank` is kept for reference.
 
 Cycles add a line here when a pattern shows up across the changelog.
 
-- None yet.
+- 2026-10-13, cycle 1: on a netting account the EAs stack into one position until a margin stop-out, because their trade cap counts positions. Backtest only on a hedging account; `evaluate` now marks any run with a stop-out as not judged.

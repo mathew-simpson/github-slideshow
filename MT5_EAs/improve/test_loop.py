@@ -133,6 +133,17 @@ class LoopTest(unittest.TestCase):
         holdout_bad = dict(ok, **{"holdout": m(0.8, 5, 40)})
         self.assertEqual(loop.judge(base, holdout_bad, acc)[0], "rejected")
         self.assertEqual(loop.judge(None, ok, acc)[0], "invalid")
+        so = dict(ok, **{"oos": dict(m(1.5, 8, 150), stopped_out=True)})
+        self.assertEqual(loop.judge(base, so, acc)[0], "invalid")
+
+    def test_stop_out_detected(self):
+        f = self.tmp / "so.htm"
+        f.write_text(report_html(0.4, 99, 900).replace("</table>",
+                     "<tr><td>2015.03.02</td><td>so 50.00%/48.10%/1 234.00</td></tr></table>"), encoding="utf-16")
+        self.assertTrue(loop.parse_report(f)["stopped_out"])
+        g = self.tmp / "ok.htm"
+        g.write_text(report_html(1.2, 5, 100), encoding="utf-16")
+        self.assertFalse(loop.parse_report(g)["stopped_out"])
 
     def test_logic_after_rejections_and_open_cycle_guard(self):
         ea = "EA2_RSI_MeanReversion"

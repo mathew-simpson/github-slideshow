@@ -503,6 +503,9 @@ def parse_report(path):
         else:
             out[key] = parse_number(raw)
     out["win_rate"] = out.pop("profit_trades")
+    # Margin stop-out deals carry an "so 50.00%/..." comment; such a run says nothing about the strategy.
+    out["stopped_out"] = bool(re.search(r">\s*so[:\s]\s*\d+(?:[.,]\d+)?%", text, re.I) or
+                              re.search(r"stop[\s-]?out", text, re.I))
     if out["total_trades"] is not None:
         out["total_trades"] = int(out["total_trades"])
     return out
@@ -538,6 +541,10 @@ def judge(base, cand, acc):
         for seg in ("is", "oos"):
             if not m or not m.get(seg) or m[seg].get("profit_factor") is None:
                 return "invalid", [f"{label} {seg} report missing or unparsed"]
+    for label, m in (("baseline", base), ("candidate", cand)):
+        hit = [seg for seg in SEGMENTS if (m.get(seg) or {}).get("stopped_out")]
+        if hit:
+            return "invalid", [f"{label} hit a margin stop-out in {', '.join(hit)} (check the tester account is hedging)"]
     b_is, b_oos, c_is, c_oos = base["is"], base["oos"], cand["is"], cand["oos"]
     fails = []
     if (c_oos["total_trades"] or 0) < acc["min_oos_trades"]:
