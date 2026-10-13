@@ -1,0 +1,23 @@
+{
+  "_note": "Logic changes the loop may try once parameter moves stall. Each one is added to the EA behind a new input flag that defaults to false, so the baseline is unchanged and the candidate is the same EA with the flag set to true. 'families' lists where the idea applies; 'all' means every EA except EA11.",
+  "ideas": [
+    {"id": "session_filter", "families": ["all"], "flag": "UseSessionFilter",
+     "change": "Only open new trades between SessionStartHour and SessionEndHour server time (inputs, defaults 7 and 20). Exits are unaffected."},
+    {"id": "spread_cap", "families": ["all"], "flag": "UseSpreadCap",
+     "change": "Skip entries when the current spread exceeds MaxSpreadPoints (input, default 20)."},
+    {"id": "breakeven_1r", "families": ["trend", "breakout", "price_action"], "flag": "UseBreakeven",
+     "change": "Move the stop to entry plus 1 point once price has moved 1R in favour."},
+    {"id": "adx_filter", "families": ["trend", "breakout"], "flag": "UseADXFilter",
+     "change": "Require ADX(14) >= ADXFilterLevel (input, default 20) on the signal bar."},
+    {"id": "adx_ceiling", "families": ["mean_reversion"], "flag": "UseADXCeiling",
+     "change": "Skip entries when ADX(14) > ADXCeilingLevel (input, default 25), so fades are taken only in ranges."},
+    {"id": "htf_trend_filter", "families": ["trend", "mean_reversion", "price_action", "scalping"], "flag": "UseHTFFilter",
+     "change": "Only trade in the direction of EMA(HTFMAPeriod) on the H4 chart (input, default 50); mean reversion takes only fades toward that trend."},
+    {"id": "time_exit", "families": ["mean_reversion", "breakout"], "flag": "UseTimeExit",
+     "change": "Close a position still open after MaxBarsInTrade bars (input, default 24)."},
+    {"id": "atr_regime", "families": ["all"], "flag": "UseATRRegime",
+     "change": "Skip entries when ATR(14) is below its 100-bar 20th percentile (dead market) or above the 95th (news spike)."},
+    {"id": "one_trade_per_day", "families": ["breakout", "price_action"], "flag": "UseOneTradePerDay",
+     "change": "Allow at most one new entry per calendar day per symbol."}
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "_note": "Copied from MT5_EAs/tester/wf_plan.json (eas.*.timeframe and optimize as [start, step, stop]). loop.py prefers ../tester/wf_plan.json when it exists, so edit that file once it is merged.",
+  "EA1_MACrossover_ATR": {
+    "timeframe": "H1",
+    "optimize": {
+      "FastMA_Period": [10, 5, 40],
+      "SlowMA_Period": [30, 10, 120],
+      "ATR_SL_Mult": [1.0, 0.5, 3.0],
+      "ATR_TP_Mult": [1.5, 0.5, 5.0],
+      "TrailATRMult": [0.5, 0.5, 2.0]
+    }
+  },
+  "EA2_RSI_MeanReversion": {
+    "timeframe": "H1",
+    "optimize": {
+      "RSI_Period": [7, 2, 21],
+      "OversoldLevel": [20, 5, 35],
+      "OverboughtLvl": [65, 5, 80],
+      "ATR_SL_Mult": [1.0, 0.5, 3.0],
+      "ATR_TP_Mult": [1.0, 0.5, 3.0]
+    }
+  },
+  "EA3_BollingerBand_Breakout": {
+    "timeframe": "H1",
+    "optimize": {
+      "BB_Period": [14, 2, 30],
+      "BB_Deviation": [1.5, 0.25, 3.0],
+      "SquezeThresh": [0.001, 0.0005, 0.004],
+      "ATR_SL_Mult": [1.0, 0.5, 3.0],
+      "ATR_TP_Mult": [1.5, 0.5, 4.0]
+    }
+  },
+  "EA4_MACD_Momentum": {
+    "timeframe": "H1",
+    "optimize": {
+      "MACD_Fast": [8, 2, 16],
+      "MACD_Slow": [20, 2, 34],
+      "ADX_MinLevel": [18, 2, 32],
+      "ATR_SL_Mult": [1.0, 0.5, 3.0],
+      "ATR_TP_Mult": [2.0, 0.5, 5.0]
+    }
+  },
+  "EA5_Ichimoku_Trend": {
+    "timeframe": "H1",
+    "optimize": {
+      "Tenkan_Period": [7, 1, 12],
+      "Kijun_Period": [20, 2, 34],
+      "ATR_SL_Mult": [1.5, 0.5, 3.0],
+      "ATR_TP_Mult": [2.0, 0.5, 5.0]
+    }
+  },
+  "EA6_Stochastic_Swing": {
+    "timeframe": "H1",
+    "optimize": {
+      "Stoch_K": [5, 2, 21],
+      "OversoldLevel": [15, 5, 30],
+      "OverboughtLvl": [70, 5, 85],
+      "ATR_SL_Mult": [1.0, 0.5, 3.0],
+      "ATR_TP_Mult": [1.5, 0.5, 4.0]
+    }
+  },
+  "EA7_SuperTrend": {
+    "timeframe": "H1",
+    "optimize": {
+      "ATR_Period": [7, 1, 20],
+      "ATR_Multiplier": [2.0, 0.5, 4.5],
+      "ATR_SL_Mult": [0.5, 0.5, 2.0],
+      "ATR_TP_Mult": [2.0, 1.0, 6.0]
+    }
+  },
+  "EA8_PriceAction_PinBar": {
+    "timeframe": "H1",
+    "optimize": {
+      "PinBodyRatio": [0.2, 0.05, 0.4],
+      "PinWickRatio": [0.5, 0.05, 0.75],
+      "EMA_Period": [100, 50, 250],
+      "ATR_SL_Mult": [1.0, 0.5, 3.0],
+      "ATR_TP_Mult": [1.5, 0.5, 4.0]
+    }
+  },
+  "EA9_ATR_Channel_Breakout": {
+    "timeframe": "H1",
+    "optimize": {
+      "Channel_Period": [10, 5, 40],
+      "ATR_Expand_Min": [1.0, 0.1, 1.5],
+      "ATR_SL_Mult": [1.0, 0.5, 3.0],
+      "ATR_TP_Mult": [1.5, 0.5, 4.0]
+    }
+  },
+  "EA10_ThreeMAs_Trend": {
+    "timeframe": "H1",
+    "optimize": {
+      "FastMA": [6, 2, 14],
+      "MidMA": [15, 3, 30],
+      "SlowMA": [40, 10, 100],
+      "PullbackZone": [0.25, 0.25, 1.0],
+      "ATR_TP_Mult": [1.5, 0.5, 4.0]
+    }
+  },
+  "EA11_Grid_Recovery": {
+    "timeframe": "H1",
+    "optimize": {
+      "EMA_Period": [30, 10, 100],
+      "GridATRMult": [0.5, 0.25, 1.5],
+      "ATR_TP_Mult": [2.0, 0.5, 4.0]
+    }
+  },
+  "EA12_ScalpingMomentum": {
+    "timeframe": "M5",
+    "optimize": {
+      "FastEMA": [3, 1, 8],
+      "SlowEMA": [10, 1, 21],
+      "ATR_SL_Mult": [0.75, 0.25, 2.0],
+      "ATR_TP_Mult": [1.0, 0.25, 2.5],
+      "MaxBarsHeld": [10, 10, 40]
+    }
+  },
+  "EA13_ADX_DirectionalMove": {
+    "timeframe": "H1",
+    "optimize": {
+      "ADX_Period": [10, 2, 20],
+      "ADX_MinLevel": [15, 2.5, 30],
+      "ATR_SL_Mult": [1.0, 0.5, 3.0],
+      "ATR_TP_Mult": [2.0, 0.5, 5.0]
+    }
+  },
+  "EA14_CCI_Divergence": {
+    "timeframe": "H1",
+    "optimize": {
+      "CCI_Period": [14, 2, 30],
+      "ATR_SL_Mult": [1.0, 0.4, 3.0],
+      "ATR_TP_Mult": [1.5, 0.5, 4.0]
+    }
+  },
+  "EA15_MorningBreakout": {
+    "timeframe": "M15",
+    "optimize": {
+      "TradeEndH": [10, 1, 14],
+      "ATR_SL_Mult": [0.5, 0.25, 2.0],
+      "ATR_TP_Mult": [1.0, 0.5, 3.0],
+      "MinRangePips": [5, 5, 30]
+    }
+  }
+}
