@@ -193,6 +193,11 @@ class LoopTest(unittest.TestCase):
         self.run_cli("propose", "--only", "EA1_MACrossover_ATR")
         with self.assertRaises(SystemExit):
             self.run_cli("run")
+        # Demo wording is accepted by the check; asserted only, never launched.
+        (logs / "20261016.log").write_text(
+            "0\t16:14\tNetwork\t'5057237545': trading has been enabled, demo account - hedging mode\n",
+            encoding="utf-16")
+        self.assertTrue(loop.account_check(t)[0])
 
 
 if __name__ == "__main__":

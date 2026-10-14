@@ -437,7 +437,8 @@ def cmd_propose(p, args):
 # run (Windows, MT5 PC)
 # --------------------------------------------------------------------------
 
-LOGIN_RE = re.compile(r"'(\d+)': trading has been enabled - (netting|hedging) mode", re.I)
+# Demo accounts log "trading has been enabled, demo account - hedging mode"; live ones omit ", demo account".
+LOGIN_RE = re.compile(r"'(\d+)': trading has been enabled(?:, demo account)? - (netting|hedging) mode", re.I)
 
 
 def account_check(t):
