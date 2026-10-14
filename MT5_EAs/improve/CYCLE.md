@@ -9,8 +9,9 @@ step is handed to a session on that PC; everything else runs in the cloud checko
 - Nothing merges. Every cycle lands as commits on the loop branch behind a draft PR for the owner to review.
 - No live or demo orders are placed, changed or closed. Only the Strategy Tester runs.
 - The terminal login is never changed. If the tester needs a different account, stop and ask the owner.
-- Backtests only run on a terminal logged into a demo login listed in `tester.allowed_logins`, in hedging
-  mode. `loop.py run` reads the terminal journal and refuses otherwise, so a real-money terminal is never
+- Backtests only run on a terminal logged into the one demo login the owner names in `tester.allowed_logins`
+  (empty until they do), in hedging mode. `tester.denied_logins` (live accounts 100149667 and 105251218, and
+  excluded demo 5056895319) is refused even if listed as allowed. `loop.py run` reads the terminal journal and refuses otherwise, so a real-money terminal is never
   used. Never add a real account to that list. Do not use `D:\MT5_EA` (logged into a real account) unless
   the owner says it has been moved to a demo login and locked down.
 - Never edit files owned by another open thread or PR (the sweep, agent-repair and walk-forward work).

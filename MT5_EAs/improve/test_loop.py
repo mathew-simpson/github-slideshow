@@ -138,6 +138,31 @@ class LoopTest(unittest.TestCase):
         so = dict(ok, **{"oos": dict(m(1.5, 8, 150), stopped_out=True)})
         self.assertEqual(loop.judge(base, so, acc)[0], "invalid")
 
+    def test_account_guard_both_ways(self):
+        logs = self.tmp / "guard" / "logs"
+        logs.mkdir(parents=True)
+        base = {"data_dir": str(self.tmp / "guard")}
+        def journal(login, mode, demo):
+            wording = "trading has been enabled, demo account" if demo else "trading has been enabled"
+            logs.joinpath("20261017.log").write_text(
+                f"0\t16:14\tNetwork\t'{login}': {wording} - {mode} mode\n", encoding="utf-16")
+        # Nothing allowed until the owner names a login.
+        journal("5057237545", "hedging", True)
+        self.assertFalse(loop.account_check(dict(base, allowed_logins=[]))[0])
+        # Live and excluded logins are refused even if someone lists them as allowed.
+        for live in ("100149667", "105251218", "5056895319"):
+            journal(live, "hedging", True)
+            ok, msg = loop.account_check(dict(base, allowed_logins=[live], denied_logins=[live, "5056895319"]))
+            self.assertFalse(ok, live)
+            self.assertIn("denied_logins", msg)
+        # A demo login other than the one named is refused.
+        journal("5057237545", "hedging", True)
+        self.assertFalse(loop.account_check(dict(base, allowed_logins=["7777777"], denied_logins=[]))[0])
+        # The named demo login on hedging passes; netting refuses.
+        self.assertTrue(loop.account_check(dict(base, allowed_logins=["5057237545"], denied_logins=[]))[0])
+        journal("5057237545", "netting", True)
+        self.assertFalse(loop.account_check(dict(base, allowed_logins=["5057237545"], denied_logins=[]))[0])
+
     def test_stop_out_detected(self):
         f = self.tmp / "so.htm"
         f.write_text(report_html(0.4, 99, 900).replace("</table>",

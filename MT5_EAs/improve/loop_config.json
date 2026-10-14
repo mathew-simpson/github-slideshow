@@ -2,7 +2,7 @@
   "tester": {
     "terminal": "C:\\Program Files\\MetaTrader 5\\terminal64.exe",
     "portable": false,
-    "allowed_logins": ["5057237545"],
+    "allowed_logins": [],
     "data_dir": "C:\\Users\\YOU\\AppData\\Roaming\\MetaQuotes\\Terminal\\YOUR_TERMINAL_ID",
     "expert_prefix": "MT5_EAs\\",
     "ea_source_dir": "..",
@@ -14,15 +14,27 @@
     "model": 1,
     "holdout_model": 4,
     "job_timeout_minutes": 120,
-    "ini_encoding": "utf-16"
+    "ini_encoding": "utf-16",
+    "denied_logins": [
+      "100149667",
+      "105251218",
+      "5056895319"
+    ]
   },
-
   "segments": {
-    "is":      ["2015-01-01", "2022-12-31"],
-    "oos":     ["2023-01-01", "2025-12-31"],
-    "holdout": ["2026-01-01", "2026-09-30"]
+    "is": [
+      "2015-01-01",
+      "2022-12-31"
+    ],
+    "oos": [
+      "2023-01-01",
+      "2025-12-31"
+    ],
+    "holdout": [
+      "2026-01-01",
+      "2026-09-30"
+    ]
   },
-
   "acceptance": {
     "min_oos_trades": 30,
     "min_oos_pf_gain_pct": 3.0,
@@ -32,22 +44,45 @@
     "min_holdout_pf_ratio": 0.95,
     "max_is_profit_factor": 5.0
   },
-
   "proposal": {
     "logic_after_rejections": 3,
     "max_tries_per_ea_per_oos_window": 40
   },
-
   "families": {
-    "trend": ["EA1_MACrossover_ATR", "EA4_MACD_Momentum", "EA5_Ichimoku_Trend", "EA7_SuperTrend", "EA10_ThreeMAs_Trend", "EA13_ADX_DirectionalMove"],
-    "mean_reversion": ["EA2_RSI_MeanReversion", "EA6_Stochastic_Swing", "EA14_CCI_Divergence"],
-    "breakout": ["EA3_BollingerBand_Breakout", "EA9_ATR_Channel_Breakout", "EA15_MorningBreakout"],
-    "price_action": ["EA8_PriceAction_PinBar"],
-    "scalping": ["EA12_ScalpingMomentum"],
-    "grid": ["EA11_Grid_Recovery"]
+    "trend": [
+      "EA1_MACrossover_ATR",
+      "EA4_MACD_Momentum",
+      "EA5_Ichimoku_Trend",
+      "EA7_SuperTrend",
+      "EA10_ThreeMAs_Trend",
+      "EA13_ADX_DirectionalMove"
+    ],
+    "mean_reversion": [
+      "EA2_RSI_MeanReversion",
+      "EA6_Stochastic_Swing",
+      "EA14_CCI_Divergence"
+    ],
+    "breakout": [
+      "EA3_BollingerBand_Breakout",
+      "EA9_ATR_Channel_Breakout",
+      "EA15_MorningBreakout"
+    ],
+    "price_action": [
+      "EA8_PriceAction_PinBar"
+    ],
+    "scalping": [
+      "EA12_ScalpingMomentum"
+    ],
+    "grid": [
+      "EA11_Grid_Recovery"
+    ]
   },
-
   "frozen_params": {
-    "EA11_Grid_Recovery": ["MaxGridLevels", "GridLotMult", "InitRiskPct", "MaxDrawdownPct"]
+    "EA11_Grid_Recovery": [
+      "MaxGridLevels",
+      "GridLotMult",
+      "InitRiskPct",
+      "MaxDrawdownPct"
+    ]
   }
 }

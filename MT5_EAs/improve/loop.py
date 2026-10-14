@@ -449,8 +449,9 @@ def account_check(t):
     tester.allowed_logins (demo accounts), so a real-money terminal is never touched.
     """
     allowed = {str(x) for x in t.get("allowed_logins", [])}
+    denied = {str(x) for x in t.get("denied_logins", [])}
     if not allowed:
-        return False, "tester.allowed_logins is empty; list the demo login(s) the tester may run on"
+        return False, "tester.allowed_logins is empty; the owner must name the one demo login the tester may run on"
     logs = sorted((Path(t["data_dir"]) / "logs").glob("*.log"))
     last = None
     for log in reversed(logs):
@@ -461,6 +462,8 @@ def account_check(t):
     if not last:
         return False, f"no login line found in {Path(t['data_dir']) / 'logs'}; open the terminal once so it logs in"
     login, mode = last
+    if login in denied:
+        return False, f"login {login} is on tester.denied_logins (live or excluded); never run on it"
     if login not in allowed:
         return False, f"terminal is logged into {login}, which is not in tester.allowed_logins {sorted(allowed)}"
     if mode.lower() != "hedging":
