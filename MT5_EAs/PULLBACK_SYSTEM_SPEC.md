@@ -174,6 +174,8 @@ before any live funds.
 | Date | Version | Run | Result | Notes |
 |---|---|---|---|---|
 | 2026-10-13 | 1.0 | Spec registered, EA written | Not run | Backtests run on the user's PC |
+| 2026-10-14 | 1.0 | EA16 compiled on the PC (0 errors, 4 warnings) | Done | Warning 63 in MM_TrailATR noted; EA16 does not call it |
+| 2026-10-14 | 1.0 | IS grid 2015-2022, full 700 passes (Model=1) | Aborted | PC dropped mid-run and the process was left running; killed by hand at the user's request. No parameters chosen, OOS not run. Restart from the beginning |
 
 ## Change control
 
