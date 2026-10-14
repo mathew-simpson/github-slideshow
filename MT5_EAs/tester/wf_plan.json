@@ -188,6 +188,15 @@
         "ATR_TP_Mult":  [1.0, 0.5, 3.0],
         "MinRangePips": [5, 5, 30]
       }
+    },
+    "EA16_PullbackCapture": {
+      "timeframe": "H1",
+      "optimize": {
+        "H1_FastMA":     [10, 5, 30],
+        "TargetRetrace": [0.3, 0.1, 0.7],
+        "SL_ATR_Buffer": [0.25, 0.25, 1.0],
+        "MaxHoldBars":   [12, 6, 48]
+      }
     }
   }
 }

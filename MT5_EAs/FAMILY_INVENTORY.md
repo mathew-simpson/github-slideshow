@@ -22,6 +22,7 @@ exist yet and would be new EAs or new modes, not improvements to existing ones.
 | Breakout and volatility | EA3 Bollinger squeeze, EA9 ATR channel, EA15 Asian-range breakout | Range or band break, often session-gated | EA15 fixes the session by hour inputs |
 | Price action | EA8 pin bar | Candle shape at an EMA-200 filter | |
 | Scalping | EA12 scalping momentum | Fast EMA cross with RSI bias, `MaxBarsHeld` time exit | Small risk (0.5%), sensitive to spread |
+| Counter-trend pullback | EA16 pullback capture | Trades the H1 pullback against a D1 trend, exits at the retracement target or when the trend resumes | System 2 of the two-system plan; pre-registered in `PULLBACK_SYSTEM_SPEC.md`. Needs a hedging account to run beside a trend-hold EA |
 | Grid recovery | EA11 grid recovery | Trend entry, then market-order grid on adverse moves with lot multiplier 1.5 | Martingale-like. Grid depth and multiplier are deliberately fixed in the walk-forward run. Highest risk of ruin in the set |
 | Portfolio guard | EA00 | Not a trader. Equity halt and allocation across the others | See `PORTFOLIO_README.md` |
 
